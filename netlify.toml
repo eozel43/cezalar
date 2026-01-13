@@ -1,4 +1,4 @@
 [build]
   base = "varakalar-dashboard"
   command = "pnpm install && pnpm run build"
-  publish = "varakalar-dashboard/dist"
+  publish = "/dist"
