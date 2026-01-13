@@ -26,12 +26,12 @@
     "jsx": "react-jsx",
     /* Linting */
     "strict": false,
-    "noImplicitAny": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": false,
+    "noImplicitAny": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
     "noUncheckedIndexedAccess": false,
-    "noImplicitReturns": false,
+    "noImplicitReturns": true,
     "noImplicitThis": false,
     "noPropertyAccessFromIndexSignature": false,
     "noUncheckedSideEffectImports": false

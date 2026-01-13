@@ -11,7 +11,7 @@ import ExcelUpload from './components/ExcelUpload';
 import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
 import { useVarakalarData } from './hooks/useVarakalarData';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from './contexts/useAuth';
 import { Varaka } from './types';
 
 function App() {
