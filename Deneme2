@@ -1,8 +1,1 @@
-[build]
-  command = "cd varakalar-dashboard && pnpm run build"
-  publish = "varakalar-dashboard/dist"
 
-[[redirects]]
-  from = "/*"
-  to = "/index.html"
-  status = 200
