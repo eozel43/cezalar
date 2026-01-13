@@ -1,7 +1,8 @@
 [build]
-base = "varakalar-dashboard"
-command = "npm run build"
+command = "pnpm run build"
 publish = "dist"
 
 [build.environment]
 NODE_ENV = "production"
+NPM_FLAGS = "--legacy-peer-deps"
+
