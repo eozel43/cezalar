@@ -1,5 +1,4 @@
-
 [build]
   base = "varakalar-dashboard"
   command = "npm install && npm run build"
-  publish = "dist"
+  publish = "varakalar-dashboard/dist"
