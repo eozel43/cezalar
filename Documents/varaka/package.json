@@ -1,7 +1,0 @@
-{
-  "name": "varaka-root",
-  "private": true,
-  "scripts": {
-    "build": "cd varakalar-dashboard && npm run build"
-  }
-}
