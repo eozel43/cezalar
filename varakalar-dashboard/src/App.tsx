@@ -310,10 +310,10 @@ function App() {
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center">
             <div className="text-body-sm text-neutral-500 mb-2">
-              © 2025 Varakalar Dashboard - Gelişmiş Trafik Cezası Analiz Sistemi
+              © 2026 Varakalar Dashboard - Gelişmiş Trafik Cezası Analiz Sistemi
             </div>
             <div className="text-caption text-neutral-400">
-              375 kayıt • Pareto Analizi • Top 3 Araç Takibi • Men Cezaları Desteği
+              Emre ÖZEL Endüstri Yük. Mühendisi
             </div>
           </div>
         </div>
