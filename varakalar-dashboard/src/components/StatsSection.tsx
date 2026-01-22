@@ -1,5 +1,5 @@
 import React from 'react';
-import { TrendingUp, AlertTriangle, FileText } from 'lucide-react';
+import { TrendingUp, AlertTriangle, FileText, Layers, Hash, BarChart3 } from 'lucide-react';
 import { Ozet } from '../types';
 
 interface StatCardProps {
@@ -37,9 +37,17 @@ interface StatsSectionProps {
   ozet: Ozet;
   enYayginKabahat?: string;
   enYayginKabahatSayisi?: number;
+  kabahatTuruSayisi?: number;
+  ortalamaKabahatSayisi?: number;
 }
 
-const StatsSection: React.FC<StatsSectionProps> = ({ ozet, enYayginKabahat, enYayginKabahatSayisi }) => {
+const StatsSection: React.FC<StatsSectionProps> = ({ 
+  ozet, 
+  enYayginKabahat, 
+  enYayginKabahatSayisi,
+  kabahatTuruSayisi,
+  ortalamaKabahatSayisi 
+}) => {
   // Para formatı için yardımcı fonksiyon
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('tr-TR', {
@@ -50,7 +58,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({ ozet, enYayginKabahat, enYa
     }).format(amount);
   };
 
-  const stats = [
+  const primaryStats = [
     {
       title: 'Toplam Ceza Sayısı',
       value: ozet.toplam_sayisi.toLocaleString('tr-TR'),
@@ -71,11 +79,33 @@ const StatsSection: React.FC<StatsSectionProps> = ({ ozet, enYayginKabahat, enYa
     },
   ];
 
+  const kabahatStats = [
+    {
+      title: 'Farklı Kabahat Türü',
+      value: kabahatTuruSayisi?.toLocaleString('tr-TR') || 0,
+      subtitle: 'Benzersiz kabahat kategorileri',
+      icon: <Layers className="w-6 h-6 text-blue-500" />,
+    },
+    {
+      title: 'Kabahat Sayısı',
+      value: ozet.toplam_sayisi.toLocaleString('tr-TR'),
+      subtitle: 'Toplam işlenen kabahat',
+      icon: <Hash className="w-6 h-6 text-blue-500" />,
+    },
+    {
+      title: 'Ortalama Kabahat Sayısı',
+      value: ortalamaKabahatSayisi?.toLocaleString('tr-TR') || 0,
+      subtitle: 'Tür başına ortalama sıklık',
+      icon: <BarChart3 className="w-6 h-6 text-blue-500" />,
+    },
+  ];
+
   return (
     <section className="py-16">
       <div className="mx-auto max-w-7xl px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {stats.map((stat, index) => (
+        {/* Ana Finansal İstatistikler */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {primaryStats.map((stat, index) => (
             <div
               key={index}
               className="animate-slide-up"
@@ -85,8 +115,22 @@ const StatsSection: React.FC<StatsSectionProps> = ({ ozet, enYayginKabahat, enYa
             </div>
           ))}
         </div>
+
+        {/* Kabahat Detay İstatistikleri */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {kabahatStats.map((stat, index) => (
+            <div
+              key={index}
+              className="animate-slide-up"
+              style={{ animationDelay: `${(index + 3) * 50}ms` }}
+            >
+              <StatCard {...stat} className="border-blue-100 bg-blue-50/30" />
+            </div>
+          ))}
+        </div>
+
         {enYayginKabahat && enYayginKabahatSayisi && (
-          <div className="mt-8 text-center">
+          <div className="mt-12 text-center">
             <div className="inline-flex items-center gap-2 bg-primary-50 px-6 py-3 rounded-full border border-primary-200">
               <AlertTriangle className="w-5 h-5 text-primary-600" />
               <span className="text-primary-900 font-medium">

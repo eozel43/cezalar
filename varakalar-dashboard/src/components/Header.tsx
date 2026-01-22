@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { useAuth } from '../contexts/useAuth';
 
 interface HeaderProps {
@@ -13,6 +14,7 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
   return (
     <header className="sticky top-0 z-50 w-full border-b border-neutral-200 bg-background-surface/95 backdrop-blur-sm">
       <div className="mx-auto max-w-7xl px-6">
+        {/* Üst Satır: Başlık ve Kullanıcı İşlemleri */}
         <div className="flex h-16 items-center justify-between">
           <h1 className="text-heading-lg font-bold text-neutral-900">
             Varakalar Dashboard
@@ -21,7 +23,7 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
           <div className="flex items-center gap-3">
             {user ? (
               <>
-                <span className="text-body-sm text-neutral-600">
+                <span className="hidden sm:inline text-body-sm text-neutral-600">
                   {user.email}
                 </span>
                 {profile?.role === 'admin' && (
@@ -32,7 +34,7 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
-                    Admin Panel
+                    <span className="hidden md:inline">Admin Panel</span>
                   </button>
                 )}
                 {profile?.status === 'active' && (
@@ -43,13 +45,8 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                     <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
-                    Excel Yükle
+                    <span className="hidden md:inline">Excel Yükle</span>
                   </button>
-                )}
-                {profile?.status === 'pending' && (
-                  <span className="px-4 py-2 bg-amber-100 text-amber-800 rounded-md text-body-sm font-medium">
-                    Onay Bekleniyor
-                  </span>
                 )}
                 <button
                   onClick={() => signOut()}
@@ -67,6 +64,32 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
               </button>
             )}
           </div>
+        </div>
+
+        {/* Alt Satır: Navigasyon Menüsü */}
+        <div className="flex items-center border-t border-neutral-100 py-2">
+          <nav className="flex items-center gap-2">
+            <NavLink 
+              to="/" 
+              className={({ isActive }) => `px-4 py-2 rounded-md text-body font-medium transition-colors ${
+                isActive 
+                  ? 'bg-primary-50 text-primary-600' 
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+              }`}
+            >
+              Dashboard
+            </NavLink>
+            <NavLink 
+              to="/detay" 
+              className={({ isActive }) => `px-4 py-2 rounded-md text-body font-medium transition-colors ${
+                isActive 
+                  ? 'bg-primary-50 text-primary-600' 
+                  : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+              }`}
+            >
+              Detaylı Arama
+            </NavLink>
+          </nav>
         </div>
       </div>
     </header>

@@ -275,34 +275,6 @@ const ChartSection: React.FC<ChartSectionProps> = ({ varakalar, className = '' }
             <Bar data={monthlyData} options={barOptions} />
           </div>
         </div>
-
-        {/* Summary Stats */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-primary-50 rounded-lg p-4 border border-primary-200">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-primary-700">{Object.keys(kabahatDagilimi).length}</div>
-              <div className="text-body-sm text-primary-600">Farklı Kabahat Türü</div>
-            </div>
-          </div>
-          
-          <div className="bg-semantic-success/10 rounded-lg p-4 border border-semantic-success/20">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-semantic-success">
-                {Math.max(...Object.values(kabahatDagilimi))}
-              </div>
-              <div className="text-body-sm text-semantic-success">En Sık Kabahat Sayısı</div>
-            </div>
-          </div>
-          
-          <div className="bg-semantic-warning/10 rounded-lg p-4 border border-semantic-warning/20">
-            <div className="text-center">
-              <div className="text-2xl font-bold text-semantic-warning">
-                {(Object.values(kabahatDagilimi).reduce((a, b) => a + b, 0) / Object.keys(kabahatDagilimi).length).toFixed(1)}
-              </div>
-              <div className="text-body-sm text-semantic-warning">Ortalama Kabahat Sayısı</div>
-            </div>
-          </div>
-        </div>
       </div>
     </section>
   );
