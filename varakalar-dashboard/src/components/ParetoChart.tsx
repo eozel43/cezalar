@@ -15,6 +15,7 @@ import {
 import { Chart } from 'react-chartjs-2';
 import annotationPlugin from 'chartjs-plugin-annotation';
 import { ParetoAnalizi } from '../types';
+import { useTheme } from 'next-themes';
 
 ChartJS.register(
   CategoryScale,
@@ -36,6 +37,13 @@ interface ParetoChartProps {
 }
 
 const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
+  const textColor = isDark ? '#A3A3A3' : '#404040'; // neutral-400 equivalent for labels
+  const gridColor = isDark ? '#262626' : '#E5E5E5';
+  const titleColor = isDark ? '#E5E5E5' : '#171717'; // neutral-200 equivalent for titles
+
   const labels = paretoData.map(item => 
     item.kabahat.length > 30 ? 
     item.kabahat.substring(0, 30) + '...' : 
@@ -92,7 +100,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
             size: 14,
             weight: 400,
           },
-          color: '#404040',
+          color: textColor,
           padding: 20,
           usePointStyle: true,
         },
@@ -105,14 +113,14 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
           size: 16,
           weight: 600,
         },
-        color: '#171717',
+        color: titleColor,
         padding: 20,
       },
       tooltip: {
-        backgroundColor: '#171717',
+        backgroundColor: isDark ? '#262626' : '#171717',
         titleColor: '#FFFFFF',
         bodyColor: '#FFFFFF',
-        borderColor: '#E5E5E5',
+        borderColor: isDark ? '#404040' : '#E5E5E5',
         borderWidth: 1,
         cornerRadius: 8,
         displayColors: true,
@@ -185,7 +193,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
             size: 12,
             weight: 500,
           },
-          color: '#404040',
+          color: textColor,
         },
         grid: {
           display: false,
@@ -195,7 +203,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
             family: 'Inter',
             size: 10,
           },
-          color: '#404040',
+          color: textColor,
           maxRotation: 45,
         },
       },
@@ -214,7 +222,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
           color: '#0066FF',
         },
         grid: {
-          color: '#E5E5E5',
+          color: gridColor,
           lineWidth: 1,
         },
         ticks: {
@@ -222,7 +230,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
             family: 'Inter',
             size: 12,
           },
-          color: '#404040',
+          color: textColor,
         },
       },
       y1: {
@@ -247,7 +255,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
             family: 'Inter',
             size: 12,
           },
-          color: '#404040',
+          color: textColor,
           callback: function(value: any) {
             return value + '%';
           },
@@ -260,39 +268,15 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
 
   };
 
-  // %80 kuralı için annotation
-  const plugins = {
-    annotation: {
-      annotations: {
-        line80: {
-          type: 'line' as const,
-          yMin: 80,
-          yMax: 80,
-          yScaleID: 'y1',
-          borderColor: '#F59E0B',
-          borderWidth: 2,
-          borderDash: [5, 5],
-          label: {
-            content: '%80 Kuralı',
-            enabled: true,
-            position: 'end',
-            backgroundColor: '#F59E0B',
-            color: '#FFFFFF',
-          },
-        },
-      },
-    },
-  };
-
   return (
     <section className={`py-16 ${className}`}>
       <div className="mx-auto max-w-7xl px-6">
-        <div className="bg-background-surface rounded-lg border border-neutral-200 p-8 shadow-sm">
+        <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
           <div className="flex items-center justify-between mb-6">
-            <h3 className="text-heading-md font-semibold text-neutral-900">
+            <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200">
               Pareto Analizi - Kabahat Dağılımı
             </h3>
-            <div className="flex items-center gap-4 text-body-sm text-neutral-600">
+            <div className="flex items-center gap-4 text-body-sm text-neutral-600 dark:text-neutral-400">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 bg-primary-500 rounded"></div>
                 <span>Ceza Sayısı</span>
@@ -310,7 +294,7 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
           <div className="h-96">
             <Chart type="bar" data={data} options={options} />
           </div>
-          <div className="mt-4 text-body-sm text-neutral-600">
+          <div className="mt-4 text-body-sm text-neutral-600 dark:text-neutral-400">
             <p>
               <strong>Analiz:</strong> İlk 4 kabahat türü toplam cezaların %80'ini oluşturuyor. 
               Bu alanlara odaklanarak cezaları %80 oranında azaltmak mümkün.

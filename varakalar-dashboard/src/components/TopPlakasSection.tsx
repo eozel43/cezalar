@@ -36,23 +36,23 @@ const TopPlakaCard: React.FC<TopPlakaCardProps> = ({ data, rank, className = '' 
   };
 
   return (
-    <div className={`bg-background-surface rounded-lg border border-neutral-200 p-6 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 ${className}`}>
+    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-6 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 ${className}`}>
       {/* Rank Badge */}
       <div className="flex items-center justify-between mb-4">
         <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-body-sm font-semibold text-white bg-gradient-to-r ${getRankColor(rank)}`}>
           <span className="text-lg">{getRankIcon(rank)}</span>
           <span>#{rank}</span>
         </div>
-        <Trophy className="w-5 h-5 text-neutral-400" />
+        <Trophy className="w-5 h-5 text-neutral-400 dark:text-neutral-500" />
       </div>
 
       {/* Plaka No */}
       <div className="mb-4">
         <div className="flex items-center gap-2 mb-1">
           <Car className="w-4 h-4 text-primary-500" />
-          <span className="text-body-sm font-medium text-neutral-700">Plaka No</span>
+          <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400">Plaka No</span>
         </div>
-        <div className="text-heading-md font-bold text-neutral-900">
+        <div className="text-heading-md font-bold text-neutral-900 dark:text-neutral-200">
           {data.plaka}
         </div>
       </div>
@@ -63,9 +63,9 @@ const TopPlakaCard: React.FC<TopPlakaCardProps> = ({ data, rank, className = '' 
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <DollarSign className="w-4 h-4 text-semantic-success" />
-            <span className="text-body-sm font-medium text-neutral-700">Toplam</span>
+            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400">Toplam</span>
           </div>
-          <div className="text-body font-bold text-semantic-success">
+          <div className="text-body font-bold text-semantic-success dark:text-emerald-400">
             {formatCurrency(data.toplam_ceza)}
           </div>
         </div>
@@ -74,19 +74,19 @@ const TopPlakaCard: React.FC<TopPlakaCardProps> = ({ data, rank, className = '' 
         <div className="text-center">
           <div className="flex items-center justify-center gap-1 mb-1">
             <span className="w-4 h-4 text-center text-body-sm font-bold text-semantic-warning">#</span>
-            <span className="text-body-sm font-medium text-neutral-700">Sayı</span>
+            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400">Sayı</span>
           </div>
-          <div className="text-body font-bold text-semantic-warning">
+          <div className="text-body font-bold text-semantic-warning dark:text-amber-400">
             {data.ceza_sayisi}
           </div>
         </div>
       </div>
 
       {/* Ortalama */}
-      <div className="mt-4 pt-4 border-t border-neutral-200">
+      <div className="mt-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
         <div className="text-center">
-          <span className="text-body-sm text-neutral-500">Ortalama Ceza: </span>
-          <span className="text-body font-semibold text-neutral-900">
+          <span className="text-body-sm text-neutral-500 dark:text-neutral-500">Ortalama Ceza: </span>
+          <span className="text-body font-semibold text-neutral-900 dark:text-neutral-200">
             {formatCurrency(data.ortalama_ceza)}
           </span>
         </div>
@@ -105,10 +105,10 @@ const TopPlakasSection: React.FC<TopPlakasSectionProps> = ({ topPlakaData, class
     <section className={`py-8 ${className}`}>
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-8">
-          <h2 className="text-heading-lg font-semibold text-neutral-900 mb-2">
+          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2">
             🏆 En Çok Ceza Alan Araçlar
           </h2>
-          <p className="text-body text-neutral-600">
+          <p className="text-body text-neutral-600 dark:text-neutral-400">
             Top 3 plaka ve ceza analizi - Bu araçlar özel takip gerektirir
           </p>
         </div>
@@ -129,12 +129,12 @@ const TopPlakasSection: React.FC<TopPlakasSectionProps> = ({ topPlakaData, class
         </div>
 
         {/* Summary */}
-        <div className="mt-8 p-6 bg-gradient-to-r from-primary-50 to-primary-100 rounded-lg border border-primary-200">
+        <div className="mt-8 p-6 bg-gradient-to-r from-primary-50 to-primary-100 dark:from-primary-900/10 dark:to-primary-900/20 rounded-lg border border-primary-200 dark:border-primary-800">
           <div className="flex items-center gap-2 mb-3">
-            <Trophy className="w-5 h-5 text-primary-600" />
-            <span className="text-body font-semibold text-primary-900">Analiz Özeti</span>
+            <Trophy className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+            <span className="text-body font-semibold text-primary-900 dark:text-primary-100">Analiz Özeti</span>
           </div>
-          <div className="text-body-sm text-primary-800">
+          <div className="text-body-sm text-primary-800 dark:text-primary-200">
             Top 3 plaka toplam <strong>{topPlakaData.reduce((sum, p) => sum + p.toplam_ceza, 0).toLocaleString('tr-TR')} TL</strong> 
             ceza almış ve <strong>{topPlakaData.reduce((sum, p) => sum + p.ceza_sayisi, 0)}</strong> adet ihlal yapmış. 
             Bu araçların ceza almayı azaltması için özel eğitim ve takip programı önerilir.

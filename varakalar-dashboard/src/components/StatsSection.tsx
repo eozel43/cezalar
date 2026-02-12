@@ -12,18 +12,18 @@ interface StatCardProps {
 
 const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, className = '' }) => {
   return (
-    <div className={`bg-background-surface rounded-lg border border-neutral-200 p-8 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 hover:scale-102 ${className}`}>
+    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 hover:scale-102 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1">
           <div className="flex items-center gap-2 mb-3">
             {icon}
-            <span className="text-body-sm font-medium text-neutral-700">{title}</span>
+            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400">{title}</span>
           </div>
-          <div className="text-heading-xl font-bold text-neutral-900 mb-1">
+          <div className="text-heading-xl font-bold text-neutral-900 dark:text-neutral-200 mb-1">
             {value}
           </div>
           {subtitle && (
-            <div className="text-body-sm text-neutral-500">
+            <div className="text-body-sm text-neutral-500 dark:text-neutral-500">
               {subtitle}
             </div>
           )}
@@ -124,16 +124,16 @@ const StatsSection: React.FC<StatsSectionProps> = ({
               className="animate-slide-up"
               style={{ animationDelay: `${(index + 3) * 50}ms` }}
             >
-              <StatCard {...stat} className="border-blue-100 bg-blue-50/30" />
+              <StatCard {...stat} className="border-blue-100 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-900/10" />
             </div>
           ))}
         </div>
 
         {enYayginKabahat && enYayginKabahatSayisi && (
           <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-2 bg-primary-50 px-6 py-3 rounded-full border border-primary-200">
-              <AlertTriangle className="w-5 h-5 text-primary-600" />
-              <span className="text-primary-900 font-medium">
+            <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-full border border-primary-200 dark:border-primary-800">
+              <AlertTriangle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
+              <span className="text-primary-900 dark:text-primary-100 font-medium">
                 En yaygın kabahat: <span className="font-bold">{enYayginKabahat}</span> ({enYayginKabahatSayisi.toLocaleString('tr-TR')} adet)
               </span>
             </div>

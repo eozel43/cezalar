@@ -43,49 +43,49 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
       <div className="mx-auto max-w-7xl px-6">
         {/* Section Header */}
         <div className="mb-8">
-          <h2 className="text-heading-lg font-semibold text-neutral-900 mb-2">
+          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2">
             🔍 Gelişmiş Arama & Filtreleme
           </h2>
-          <p className="text-body text-neutral-600">
+          <p className="text-body text-neutral-600 dark:text-neutral-400">
             Verilerinizi detaylı şekilde filtreleyin ve analiz edin
           </p>
         </div>
 
         {/* Filter Controls */}
-        <div className="bg-background-surface rounded-lg border border-neutral-200 p-8 shadow-sm">
+        <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left Column */}
             <div className="space-y-6">
               {/* Plaka Arama */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 mb-2">
+                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   <Search className="w-4 h-4" />
                   Plaka / İsim Arama
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 w-5 h-5" />
                   <input
                     type="text"
                     placeholder="Plaka numarası veya isim ile arama..."
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-body placeholder:text-neutral-500 transition-all duration-200"
+                    className="w-full h-12 pl-10 pr-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 placeholder:text-neutral-500 transition-all duration-200"
                   />
                 </div>
               </div>
 
               {/* Kabahat Türü Filtre */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 mb-2">
+                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   <User className="w-4 h-4" />
                   Kabahat Türü
                 </label>
                 <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 w-5 h-5" />
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 w-5 h-5" />
                   <select
                     value={kabahatFilter}
                     onChange={(e) => onKabahatFilterChange(e.target.value)}
-                    className="w-full h-12 pl-10 pr-10 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-body appearance-none bg-white transition-all duration-200"
+                    className="w-full h-12 pl-10 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-all duration-200"
                   >
                     <option value="">Tüm kabahat türleri</option>
                     {kabahatList.map((kabahat) => (
@@ -107,7 +107,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
             <div className="space-y-6">
               {/* Ceza Türü Filtre */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 mb-2">
+                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
                   <DollarSign className="w-4 h-4" />
                   Ceza Türü
                 </label>
@@ -115,7 +115,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                   <select
                     value={cezaTuruFilter}
                     onChange={(e) => onCezaTuruFilterChange(e.target.value)}
-                    className="w-full h-12 pl-4 pr-10 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-body appearance-none bg-white transition-all duration-200"
+                    className="w-full h-12 pl-4 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-all duration-200"
                   >
                     <option value="">Tüm ceza türleri</option>
                     <option value="para">Para Cezası</option>
@@ -130,12 +130,12 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
               </div>
 
               {/* Men Cezaları Toggle */}
-              <div className="flex items-center justify-between p-4 bg-neutral-50 rounded-lg border border-neutral-200">
+              <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-center gap-2">
                   <Ban className="w-5 h-5 text-semantic-warning" />
                   <div>
-                    <div className="text-body-sm font-medium text-neutral-900">Sadece Men Cezaları</div>
-                    <div className="text-body-sm text-neutral-600">Men cezalarını özel olarak göster</div>
+                    <div className="text-body-sm font-medium text-neutral-900 dark:text-neutral-200">Sadece Men Cezaları</div>
+                    <div className="text-body-sm text-neutral-600 dark:text-neutral-400">Men cezalarını özel olarak göster</div>
                   </div>
                 </div>
                 <label className="relative inline-flex items-center cursor-pointer">
@@ -145,15 +145,15 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                     onChange={(e) => onShowMenCezalariChange(e.target.checked)}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-neutral-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                  <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
                 </label>
               </div>
             </div>
           </div>
 
           {/* Date Range */}
-          <div className="mt-6 pt-6 border-t border-neutral-200">
-            <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 mb-3">
+          <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
+            <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
               <Calendar className="w-4 h-4" />
               Tarih Aralığı (İsteğe Bağlı)
             </label>
@@ -163,7 +163,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => onDateRangeChange(e.target.value, dateRange.end)}
-                  className="w-full h-12 px-4 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-body transition-all duration-200"
+                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-all duration-200"
                 />
               </div>
               <div>
@@ -171,19 +171,19 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => onDateRangeChange(dateRange.start, e.target.value)}
-                  className="w-full h-12 px-4 border border-neutral-200 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-body transition-all duration-200"
+                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-all duration-200"
                 />
               </div>
             </div>
           </div>
 
           {/* Results Summary */}
-          <div className="mt-6 pt-6 border-t border-neutral-200">
+          <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
             <div className="flex items-center justify-between">
-              <div className="text-body-sm text-neutral-600">
-                <span className="font-medium">{filteredCount}</span> kayıt gösteriliyor
+              <div className="text-body-sm text-neutral-600 dark:text-neutral-400">
+                <span className="font-medium text-neutral-900 dark:text-neutral-200">{filteredCount}</span> kayıt gösteriliyor
                 {filteredCount !== totalCount && (
-                  <span> / <span className="font-medium">{totalCount}</span> toplam</span>
+                  <span> / <span className="font-medium text-neutral-900 dark:text-neutral-200">{totalCount}</span> toplam</span>
                 )}
               </div>
               
@@ -192,7 +192,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                 {(searchTerm || kabahatFilter || cezaTuruFilter || showMenCezalari || dateRange.start || dateRange.end) && (
                   <div className="flex items-center gap-1">
                     <div className="w-2 h-2 bg-primary-500 rounded-full"></div>
-                    <span className="text-body-sm text-primary-700 font-medium">Aktif Filtre</span>
+                    <span className="text-body-sm text-primary-700 dark:text-primary-400 font-medium">Aktif Filtre</span>
                   </div>
                 )}
               </div>
