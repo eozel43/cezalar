@@ -4,6 +4,7 @@ import autoTable from 'jspdf-autotable';
 import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
 import DataTable from '../components/DataTable';
 import { Varaka } from '../types';
+import { addTurkishFont } from '../lib/pdfFonts';
 
 interface DetailsPageProps {
   varakalar: Varaka[];
@@ -16,6 +17,7 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
   const [cezaTuruFilter, setCezaTuruFilter] = useState('');
   const [showMenCezalari, setShowMenCezalari] = useState(false);
   const [dateRange, setDateRange] = useState({ start: '', end: '' });
+  const [isExporting, setIsExporting] = useState(false);
 
   // Calculate lists and counts for filters
   const { kabahatList, totalCount } = useMemo(() => {
@@ -75,49 +77,66 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
     return filtered;
   }, [varakalar, searchTerm, kabahatFilter, cezaTuruFilter, showMenCezalari, dateRange]);
 
-  const handleExportPDF = () => {
+  const handleExportPDF = async () => {
     if (!filteredData.length) {
       alert("PDF oluşturmak için filtrelenmiş veri bulunmuyor.");
       return;
     }
   
-    const doc = new jsPDF();
+    setIsExporting(true);
 
-    // NOTE: jsPDF has limitations with UTF-8 characters.
-    // For full Turkish character support, a custom font that includes these glyphs
-    // would need to be loaded. We will proceed with standard fonts, so some
-    // characters might not be rendered correctly.
-    doc.text("Filtrelenmiş Varakalar Raporu", 14, 20);
-  
-    const tableColumns = ['Sıra No', 'Tarih', 'Plaka', 'İsim', 'Kabahat', 'Ceza Miktarı (TL)'];
-    const tableRows = filteredData.map(item => [
-      item.sira_no,
-      new Date(item.tarih).toLocaleDateString('tr-TR'),
-      item.plaka_no,
-      item.isim,
-      item.kabahat,
-      item.ceza_miktari.toFixed(2)
-    ]);
-  
-    autoTable(doc, {
-      head: [tableColumns],
-      body: tableRows,
-      startY: 28,
-      theme: 'grid',
-      headStyles: {
-        fillColor: [41, 128, 185], // A nice blue color
-        textColor: 255,
-        fontStyle: 'bold',
-      },
-      didDrawPage: (data) => {
-        // Footer
-        const pageCount = doc.internal.getNumberOfPages();
-        doc.setFontSize(10);
-        doc.text(`Sayfa ${data.pageNumber} / ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
-      }
-    });
-  
-    doc.save('filtrelenmis_varakalar.pdf');
+    try {
+      // Give the UI a chance to update before heavy processing
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const doc = new jsPDF();
+      
+      // Add font support for Turkish characters
+      const fontName = addTurkishFont(doc);
+      doc.setFont(fontName);
+
+      // For full Turkish character support, we use the identity-h encoding if possible
+      // but the most reliable way in jsPDF is adding a UTF-8 compatible font.
+      doc.text("Filtrelenmiş Varakalar Raporu", 14, 20);
+    
+      const tableColumns = ['Sıra No', 'Tarih', 'Plaka', 'İsim', 'Kabahat', 'Ceza Miktarı (TL)'];
+      const tableRows = filteredData.map(item => [
+        item.sira_no,
+        new Date(item.tarih).toLocaleDateString('tr-TR'),
+        item.plaka_no,
+        item.isim,
+        item.kabahat,
+        item.ceza_miktari.toFixed(2)
+      ]);
+    
+      autoTable(doc, {
+        head: [tableColumns],
+        body: tableRows,
+        startY: 28,
+        theme: 'grid',
+        styles: { 
+          font: fontName, 
+          fontStyle: 'normal' 
+        },
+        headStyles: {
+          fillColor: [41, 128, 185],
+          textColor: 255,
+          fontStyle: 'bold',
+        },
+        didDrawPage: (data) => {
+          const pageCount = doc.internal.getNumberOfPages();
+          doc.setFontSize(10);
+          doc.text(`Sayfa ${data.pageNumber} / ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+        }
+      });
+    
+      doc.save('filtrelenmis_varakalar.pdf');
+    } catch (error) {
+      console.error("PDF oluşturulurken hata:", error);
+      alert("PDF oluşturulurken bir hata oluştu.");
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (
@@ -141,9 +160,17 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
       <div className="my-4 flex justify-end max-w-7xl mx-auto px-6">
         <button 
           onClick={handleExportPDF}
-          className="h-10 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200"
+          disabled={isExporting}
+          className={`h-10 px-4 py-2 bg-blue-600 text-white font-semibold rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors duration-200 flex items-center gap-2 ${isExporting ? 'opacity-70 cursor-not-allowed' : ''}`}
         >
-          PDF Olarak İndir
+          {isExporting ? (
+            <>
+              <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full"></span>
+              Hazırlanıyor...
+            </>
+          ) : (
+            'PDF Olarak İndir'
+          )}
         </button>
       </div>
 
