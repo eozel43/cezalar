@@ -1,9 +1,7 @@
-﻿import { jsPDF } from 'jspdf';
+﻿import jsPDF from 'jspdf';
 
 /**
  * jsPDF için Türkçe karakter desteği sağlayan font yardımcıları.
- * Bu dosya, PDF çıktılarında 'ğ, ş, İ, ç, ö, ü' gibi karakterlerin
- * düzgün görünmesi için gerekli font yükleme işlemlerini yönetir.
  */
 
 export const addTurkishFont = (doc: jsPDF) => {
@@ -14,8 +12,13 @@ export const addTurkishFont = (doc: jsPDF) => {
 
   // Fontu jsPDF'e ekle
   try {
+    // VFS'e ekle
     doc.addFileToVFS('Roboto-Regular.ttf', fontBase64);
-    doc.addFont('Roboto-Regular.ttf', fontName, 'normal');
+    
+    // Fontu 'Identity-H' (Unicode) kodlaması ile ekle
+    // Not: Bazı jsPDF sürümlerinde 4. parametre encoding'dir.
+    doc.addFont('Roboto-Regular.ttf', fontName, 'normal', 'Identity-H');
+    
     return fontName;
   } catch (error) {
     console.error('Font yüklenirken hata oluştu:', error);
@@ -25,6 +28,7 @@ export const addTurkishFont = (doc: jsPDF) => {
 
 /**
  * Türkçe karakterleri içeren metinleri PDF için temizler veya düzenler.
+ * jsPDF bazen bazı karakterleri yanlış eşleyebilir.
  */
 export const fixTurkishChars = (text: string): string => {
   if (!text) return '';

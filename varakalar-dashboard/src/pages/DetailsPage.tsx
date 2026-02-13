@@ -96,19 +96,17 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
       doc.setFont(fontName);
 
       // For full Turkish character support, we use the identity-h encoding if possible
-      // but the most reliable way in jsPDF is adding a UTF-8 compatible font.
-      doc.text("Filtrelenmiş Varakalar Raporu", 14, 20);
-    
-      const tableColumns = ['Sıra No', 'Tarih', 'Plaka', 'İsim', 'Kabahat', 'Ceza Miktarı (TL)'];
-      const tableRows = filteredData.map(item => [
-        item.sira_no,
-        new Date(item.tarih).toLocaleDateString('tr-TR'),
-        item.plaka_no,
-        item.isim,
-        item.kabahat,
-        item.ceza_miktari.toFixed(2)
-      ]);
-    
+            // but the most reliable way in jsPDF is adding a UTF-8 compatible font.
+            doc.text(fixTurkishChars("Filtrelenmiş Varakalar Raporu"), 14, 20);
+          
+            const tableColumns = ['Sıra No', 'Tarih', 'Plaka', 'İsim', 'Kabahat', 'Ceza Miktarı (TL)'].map(col => fixTurkishChars(col));            const tableRows = filteredData.map(item => [
+              item.sira_no,
+              new Date(item.tarih).toLocaleDateString('tr-TR'),
+              fixTurkishChars(item.plaka_no),
+              fixTurkishChars(item.isim),
+              fixTurkishChars(item.kabahat),
+              item.ceza_miktari.toFixed(2)
+            ]);    
       autoTable(doc, {
         head: [tableColumns],
         body: tableRows,
@@ -126,7 +124,7 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
         didDrawPage: (data) => {
           const pageCount = doc.internal.getNumberOfPages();
           doc.setFontSize(10);
-          doc.text(`Sayfa ${data.pageNumber} / ${pageCount}`, data.settings.margin.left, doc.internal.pageSize.height - 10);
+          doc.text(fixTurkishChars(`Sayfa ${data.pageNumber} / ${pageCount}`), data.settings.margin.left, doc.internal.pageSize.height - 10);
         }
       });
     
