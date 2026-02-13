@@ -4,7 +4,7 @@ import autoTable from 'jspdf-autotable';
 import AdvancedSearchFilter from '../components/AdvancedSearchFilter';
 import DataTable from '../components/DataTable';
 import { Varaka } from '../types';
-import { addTurkishFont } from '../lib/pdfFonts';
+import { addTurkishFont, fixTurkishChars } from '../lib/pdfFonts';
 
 interface DetailsPageProps {
   varakalar: Varaka[];
