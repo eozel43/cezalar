@@ -14,6 +14,9 @@ export default defineConfig({
       includeProps: true,
     })
   ],
+  esbuild: {
+    charset: 'ascii',
+  },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),

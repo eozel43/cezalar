@@ -15,6 +15,82 @@ Deno.serve(async (req) => {
     }
 
     try {
+      // Get environment variables
+      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+      const supabaseUrl = Deno.env.get('SUPABASE_URL');
+
+      if (!serviceRoleKey || !supabaseUrl) {
+        return new Response(JSON.stringify({
+          error: { code: 'CONFIG_ERROR', message: 'Missing Supabase configuration' }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 500,
+        });
+      }
+
+      // 1. Yetkilendirme Başlığı Kontrolü
+      const authHeader = req.headers.get('authorization');
+      if (!authHeader) {
+        return new Response(JSON.stringify({
+          error: { code: 'UNAUTHORIZED', message: 'Yetkisiz işlem: Yetkilendirme başlığı eksik' }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        });
+      }
+
+      const token = authHeader.replace('Bearer ', '');
+
+      // 2. Kullanıcı Kimlik Doğrulaması (Token Doğrulama)
+      const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'apikey': serviceRoleKey
+        }
+      });
+
+      if (!userResponse.ok) {
+        return new Response(JSON.stringify({
+          error: { code: 'UNAUTHORIZED', message: 'Yetkisiz işlem: Geçersiz oturum anahtarı' }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        });
+      }
+
+      const currentUserData = await userResponse.json();
+      const currentUserId = currentUserData.id;
+
+      // 3. Admin ve Aktif Durum Kontrolü
+      const adminCheckResponse = await fetch(
+        `${supabaseUrl}/rest/v1/user_profiles?user_id=eq.${currentUserId}&select=role,status`,
+        {
+          headers: {
+            'Authorization': `Bearer ${serviceRoleKey}`,
+            'apikey': serviceRoleKey
+          }
+        }
+      );
+
+      if (!adminCheckResponse.ok) {
+        return new Response(JSON.stringify({
+          error: { code: 'UNAUTHORIZED', message: 'Yetkisiz işlem: Yetki durumu kontrol edilemedi' }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 401,
+        });
+      }
+
+      const adminData = await adminCheckResponse.json();
+      if (!adminData || adminData.length === 0 || adminData[0].role !== 'admin' || adminData[0].status !== 'active') {
+        return new Response(JSON.stringify({
+          error: { code: 'FORBIDDEN', message: 'Yetkisiz işlem: Bu işlem için aktif bir admin hesabı gereklidir' }
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 403,
+        });
+      }
+
       // Get parameters from request body
       const requestBody = await req.json();
       const { email, password, role = 'authenticated' } = requestBody;
@@ -28,18 +104,7 @@ Deno.serve(async (req) => {
         });
       }
 
-      // Get environment variables
-      const serviceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
-      const supabaseUrl = Deno.env.get('SUPABASE_URL');
 
-      if (!serviceRoleKey || !supabaseUrl) {
-        return new Response(JSON.stringify({
-          error: { code: 'CONFIG_ERROR', message: 'Missing Supabase configuration' }
-        }), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          status: 500,
-        });
-      }
 
       // Generate user ID
       const userId = crypto.randomUUID();

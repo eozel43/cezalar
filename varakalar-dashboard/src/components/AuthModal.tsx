@@ -32,15 +32,31 @@ const AuthModal: React.FC<{ onClose: () => void }> = ({ onClose }) => {
     }
   };
 
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [onClose]);
+
   return (
     <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-md w-full p-8">
+      <div 
+        className="bg-white rounded-lg max-w-md w-full p-8"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="auth-modal-title"
+      >
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-heading-md font-semibold text-neutral-900">
+          <h2 id="auth-modal-title" className="text-heading-md font-semibold text-neutral-900">
             {isSignUp ? 'Kayıt Ol' : 'Giriş Yap'}
           </h2>
           <button
             onClick={onClose}
+            aria-label="Kapat"
             className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
           >
             <svg className="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">

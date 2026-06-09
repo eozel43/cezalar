@@ -50,9 +50,9 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
 
     // Ceza türü filter
     if (cezaTuruFilter === 'para') {
-      filtered = filtered.filter(varaka => varaka.ceza_miktari > 0);
+      filtered = filtered.filter(varaka => varaka.ceza_turu !== 'men');
     } else if (cezaTuruFilter === 'men') {
-      filtered = filtered.filter(varaka => varaka.ceza_turu === 'men' || varaka.ceza_miktari === 0);
+      filtered = filtered.filter(varaka => varaka.ceza_turu === 'men');
     }
 
     // Date range filter
@@ -67,11 +67,7 @@ const DetailsPage: React.FC<DetailsPageProps> = ({ varakalar }) => {
 
     // Men cezaları toggle
     if (showMenCezalari) {
-      filtered = filtered.filter(varaka => 
-        varaka.ceza_turu === 'men' || 
-        varaka.ceza_miktari === 0 || 
-        (varaka as any).ceza_detay
-      );
+      filtered = filtered.filter(varaka => varaka.ceza_turu === 'men');
     }
 
     return filtered;

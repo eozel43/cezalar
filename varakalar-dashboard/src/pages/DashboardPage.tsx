@@ -2,6 +2,7 @@ import React, { useMemo, useState, useRef } from 'react';
 import StatsSection from '../components/StatsSection';
 import TopPlakasSection from '../components/TopPlakasSection';
 import ParetoChart from '../components/ParetoChart';
+import ViolationFrequencyChart from '../components/ViolationFrequencyChart';
 import ChartSection from '../components/ChartSection';
 import { Varaka, Ozet, TopPlakaCeza, ParetoAnalizi } from '../types';
 import { calculateOzet, calculatePareto, calculateTopPlates } from '../lib/calculations';
@@ -95,8 +96,8 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
   }, [filteredVarakalar]);
 
   // Stats calculations for additional metrics
-  const { enYayginKabahat, enYayginKabahatSayisi, kabahatTuruSayisi, ortalamaKabahatSayisi } = useMemo(() => {
-    if (!filteredVarakalar.length) return { enYayginKabahat: '-', enYayginKabahatSayisi: 0, kabahatTuruSayisi: 0, ortalamaKabahatSayisi: 0 };
+  const { enYayginKabahat, enYayginKabahatSayisi } = useMemo(() => {
+    if (!filteredVarakalar.length) return { enYayginKabahat: '-', enYayginKabahatSayisi: 0 };
 
     const kabahatSayaci: Record<string, number> = {};
     filteredVarakalar.forEach((varaka) => {
@@ -104,20 +105,117 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
     });
 
     const entries = Object.entries(kabahatSayaci);
-    if (entries.length === 0) return { enYayginKabahat: '-', enYayginKabahatSayisi: 0, kabahatTuruSayisi: 0, ortalamaKabahatSayisi: 0 };
+    if (entries.length === 0) return { enYayginKabahat: '-', enYayginKabahatSayisi: 0 };
 
     const enYaygin = entries.reduce((a, b) => a[1] > b[1] ? a : b);
     
-    const turSayisi = entries.length;
-    const ortalama = filteredVarakalar.length / turSayisi;
-    
     return {
       enYayginKabahat: enYaygin[0],
-      enYayginKabahatSayisi: enYaygin[1],
-      kabahatTuruSayisi: turSayisi,
-      ortalamaKabahatSayisi: Math.round(ortalama)
+      enYayginKabahatSayisi: enYaygin[1]
     };
   }, [filteredVarakalar]);
+
+  // Helper function to compute KPI metrics for a given list of varakalar
+  const computeMetrics = (list: Varaka[]) => {
+    const totalCount = list.length;
+    const totalAmount = list.reduce((sum, v) => sum + v.ceza_miktari, 0);
+    const averageAmount = totalCount > 0 ? totalAmount / totalCount : 0;
+    
+    // Unique vehicles
+    const vehicleCounts: Record<string, number> = {};
+    list.forEach(v => {
+      const plaka = v.plaka_no?.trim();
+      if (plaka) {
+        vehicleCounts[plaka] = (vehicleCounts[plaka] || 0) + 1;
+      }
+    });
+    const uniqueVehiclesCount = Object.keys(vehicleCounts).length;
+    
+    // Repeat offender rate: unique vehicles with >1 penalty / total unique vehicles
+    const repeatOffendersCount = Object.values(vehicleCounts).filter(count => count > 1).length;
+    const repeatOffenderRate = uniqueVehiclesCount > 0 ? (repeatOffendersCount / uniqueVehiclesCount) * 100 : 0;
+    
+    // Men penalty rate: ratio of men penalties to total penalties
+    const menCount = list.filter(v => v.ceza_turu === 'men').length;
+    const menPenaltyRate = totalCount > 0 ? (menCount / totalCount) * 100 : 0;
+    
+    // Different violation category count
+    const uniqueKabahats = new Set(list.map(v => v.kabahat).filter(Boolean));
+    const kabahatTuruSayisi = uniqueKabahats.size;
+    
+    return {
+      totalCount,
+      totalAmount,
+      averageAmount,
+      uniqueVehiclesCount,
+      repeatOffenderRate,
+      menPenaltyRate,
+      kabahatTuruSayisi
+    };
+  };
+
+  // Get varakalar for the previous period to calculate trends
+  const previousPeriodVarakalar = useMemo(() => {
+    if (!data?.varakalar) return [];
+    if (selectedYear === 'all') return []; // No trend comparison if all time is selected
+
+    const currentYearNum = parseInt(selectedYear);
+    let prevYear: string | null = null;
+    let prevMonth: string | null = null;
+
+    if (selectedMonth === 'all') {
+      prevYear = (currentYearNum - 1).toString();
+      prevMonth = 'all';
+    } else {
+      const currentMonthNum = parseInt(selectedMonth);
+      if (currentMonthNum === 1) {
+        prevYear = (currentYearNum - 1).toString();
+        prevMonth = '12';
+      } else {
+        prevYear = selectedYear;
+        prevMonth = (currentMonthNum - 1).toString();
+      }
+    }
+
+    return data.varakalar.filter(v => {
+      const date = new Date(v.tarih);
+      const yearMatch = date.getFullYear().toString() === prevYear;
+      const monthMatch = prevMonth === 'all' || (date.getMonth() + 1).toString() === prevMonth;
+      return yearMatch && monthMatch;
+    });
+  }, [data, selectedYear, selectedMonth]);
+
+  // Compute metrics and their relative percentage changes
+  const metrics = useMemo(() => {
+    const current = computeMetrics(filteredVarakalar);
+    const previous = computeMetrics(previousPeriodVarakalar);
+    
+    const calculateChange = (curr: number, prev: number) => {
+      if (selectedYear === 'all') return undefined;
+      if (prev === 0) return undefined;
+      return ((curr - prev) / prev) * 100;
+    };
+    
+    return {
+      current,
+      changes: {
+        totalCount: calculateChange(current.totalCount, previous.totalCount),
+        totalAmount: calculateChange(current.totalAmount, previous.totalAmount),
+        averageAmount: calculateChange(current.averageAmount, previous.averageAmount),
+        uniqueVehiclesCount: calculateChange(current.uniqueVehiclesCount, previous.uniqueVehiclesCount),
+        repeatOffenderRate: calculateChange(current.repeatOffenderRate, previous.repeatOffenderRate),
+        menPenaltyRate: calculateChange(current.menPenaltyRate, previous.menPenaltyRate),
+        kabahatTuruSayisi: calculateChange(current.kabahatTuruSayisi, previous.kabahatTuruSayisi)
+      }
+    };
+  }, [filteredVarakalar, previousPeriodVarakalar, selectedYear]);
+
+  // Dynamic label for comparison periods
+  const selectedPeriodLabel = useMemo(() => {
+    if (selectedYear === 'all') return '';
+    if (selectedMonth === 'all') return 'Önceki yıla göre';
+    return 'Önceki aya göre';
+  }, [selectedYear, selectedMonth]);
 
   return (
     <div ref={dashboardRef} className="pb-12">
@@ -141,7 +239,7 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
         </div>
 
         {/* Filters */}
-        <div className="bg-white dark:bg-neutral-900 p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-wrap gap-4 items-center">
+        <div className="sticky top-[105px] z-40 bg-white/95 dark:bg-neutral-900/95 backdrop-blur-md p-4 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm flex flex-wrap gap-4 items-center">
           <div className="flex items-center gap-2">
             <label htmlFor="year-select" className="text-sm font-medium text-neutral-700 dark:text-neutral-300">Yıl:</label>
             <select
@@ -194,18 +292,24 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
       
       {/* Stats Section */}
       <StatsSection 
-        ozet={filteredStats.ozet} 
+        metrics={metrics.current} 
+        changes={metrics.changes}
         enYayginKabahat={enYayginKabahat}
         enYayginKabahatSayisi={enYayginKabahatSayisi}
-        kabahatTuruSayisi={kabahatTuruSayisi}
-        ortalamaKabahatSayisi={ortalamaKabahatSayisi}
+        selectedPeriodLabel={selectedPeriodLabel}
       />
       
       {/* Top 3 Plaka Section */}
       <TopPlakasSection topPlakaData={filteredStats.top_3_plaka_ceza} />
       
-      {/* Chart Sections */}
-      <ParetoChart paretoData={filteredStats.pareto_analizi} />
+      {/* Chart Sections (reverted to single row layouts for readability) */}
+      <div className="no-pdf-break py-6 max-w-7xl mx-auto px-6">
+        <ParetoChart paretoData={filteredStats.pareto_analizi} />
+      </div>
+      
+      <div className="no-pdf-break py-6 max-w-7xl mx-auto px-6">
+        <ViolationFrequencyChart varakalar={filteredVarakalar} />
+      </div>
       
       <div className="no-pdf-break">
         <ChartSection varakalar={filteredVarakalar} />

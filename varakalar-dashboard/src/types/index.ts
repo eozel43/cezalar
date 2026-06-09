@@ -52,7 +52,6 @@ export interface VarakalarData {
   ozet: Ozet;
   pareto_analizi: ParetoAnalizi[];
   top_3_plaka_ceza: TopPlakaCeza[];
-  men_ceslari: MenCezasi[];
 }
 
 export interface SortConfig {

@@ -72,7 +72,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
 
   // Ceza türü badge'i
   const CezaTuruBadge: React.FC<{ varaka: Varaka }> = ({ varaka }) => {
-    if (varaka.ceza_turu === 'men' || varaka.ceza_miktari === 0) {
+    if (varaka.ceza_turu === 'men') {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-warning/10 text-semantic-warning dark:bg-amber-900/20 dark:text-amber-400">
           <Ban className="w-3 h-3" />
@@ -90,8 +90,8 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
 
   // Stats hesaplama
   const stats = useMemo(() => {
-    const paraCezalari = sortedData.filter(v => v.ceza_miktari > 0);
-    const menCezalari = sortedData.filter(v => v.ceza_turu === 'men' || v.ceza_miktari === 0);
+    const paraCezalari = sortedData.filter(v => v.ceza_turu !== 'men');
+    const menCezalari = sortedData.filter(v => v.ceza_turu === 'men');
     const toplamParaCezasi = paraCezalari.reduce((sum, v) => sum + v.ceza_miktari, 0);
 
     return {

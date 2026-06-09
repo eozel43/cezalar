@@ -19,6 +19,19 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
 
+  // Escape tuşu ile modalları kapatma desteği
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setShowUploadModal(false);
+        setShowAuthModal(false);
+        setShowAdminPanel(false);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   // Date range calculation for Header/Global info
   const { dateRangeText } = useMemo(() => {
     if (!data || !data.varakalar.length) {
@@ -105,10 +118,19 @@ function AppContent() {
       {/* Admin Panel Modal */}
       {showAdminPanel && profile?.role === 'admin' && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="admin-modal-title"
+          >
             <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-heading-md font-semibold text-neutral-900">Admin Paneli</h2>
-              <button onClick={() => setShowAdminPanel(false)} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
+              <h2 id="admin-modal-title" className="text-heading-md font-semibold text-neutral-900">Admin Paneli</h2>
+              <button 
+                onClick={() => setShowAdminPanel(false)} 
+                aria-label="Kapat"
+                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+              >
                 <svg className="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>
@@ -122,10 +144,19 @@ function AppContent() {
       {/* Upload Modal */}
       {showUploadModal && user && profile?.status === 'active' && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div 
+            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="upload-modal-title"
+          >
             <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
-              <h2 className="text-heading-md font-semibold text-neutral-900">Excel Dosyası Yükle</h2>
-              <button onClick={() => setShowUploadModal(false)} className="p-2 hover:bg-neutral-100 rounded-lg transition-colors">
+              <h2 id="upload-modal-title" className="text-heading-md font-semibold text-neutral-900">Excel Dosyası Yükle</h2>
+              <button 
+                onClick={() => setShowUploadModal(false)} 
+                aria-label="Kapat"
+                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
+              >
                 <svg className="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                 </svg>

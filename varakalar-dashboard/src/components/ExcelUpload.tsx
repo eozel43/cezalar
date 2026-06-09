@@ -28,8 +28,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
       
       reader.onload = (e) => {
         try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: 'binary' });
+          const result = e.target?.result;
+          if (!result) throw new Error('Dosya içeriği boş');
+          const data = new Uint8Array(result as ArrayBuffer);
+          const workbook = XLSX.read(data, { type: 'array' });
           
           // Try to find "TümVeri" sheet, fallback to first sheet
           let sheetName = workbook.SheetNames.find(name => 
@@ -140,19 +142,32 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
       };
 
       reader.onerror = () => reject(new Error('Dosya okunamadı'));
-      reader.readAsBinaryString(file);
+      reader.readAsArrayBuffer(file);
     });
   };
 
   // Convert Excel date serial number to YYYY-MM-DD format
   const formatExcelDate = (excelDate: any): string => {
     if (typeof excelDate === 'string') {
-      // Already a string, try to parse it
-      const date = new Date(excelDate);
+      const str = excelDate.trim();
+      // 1. Check if it's already yyyy-mm-dd
+      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
+        return str;
+      }
+      // 2. Check for dd.mm.yyyy, dd/mm/yyyy or dd-mm-yyyy
+      const match = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+      if (match) {
+        const day = match[1].padStart(2, '0');
+        const month = match[2].padStart(2, '0');
+        const year = match[3];
+        return `${year}-${month}-${day}`;
+      }
+      // 3. Fallback to standard Date constructor
+      const date = new Date(str);
       if (!isNaN(date.getTime())) {
         return date.toISOString().split('T')[0];
       }
-      return excelDate;
+      return str;
     }
     
     // Excel serial date number
@@ -214,7 +229,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
           body: {
             varakalar,
             clearExisting: shouldClearExisting
-          }
+          },
+          signal: controller.signal
         });
 
         clearTimeout(fetchTimeoutId);
@@ -400,8 +416,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
           onDrop={handleDrop}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
+          tabIndex={0}
+          role="button"
+          aria-label="Excel dosyasını sürükleyin veya bilgisayarınızdan seçmek için tıklayın"
           className={`
-            border-2 border-dashed rounded-lg p-12 text-center transition-all duration-200
+            border-2 border-dashed rounded-lg p-12 text-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500
             ${dragging 
               ? 'border-primary-500 bg-primary-50' 
               : 'border-neutral-300 bg-neutral-50 hover:border-primary-400'
@@ -409,6 +428,14 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
             ${uploading || showConfirmDialog ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
           `}
           onClick={() => !uploading && !showConfirmDialog && fileInputRef.current?.click()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              if (!uploading && !showConfirmDialog) {
+                fileInputRef.current?.click();
+              }
+            }
+          }}
         >
           <input
             ref={fileInputRef}

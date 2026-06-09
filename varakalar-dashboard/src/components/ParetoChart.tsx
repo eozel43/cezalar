@@ -268,41 +268,51 @@ const ParetoChart: React.FC<ParetoChartProps> = ({ paretoData, className = '' })
 
   };
 
+  // Dynamically calculate which kabahats represent ~80% of the total
+  const dynamicAnalysis = React.useMemo(() => {
+    if (!paretoData || paretoData.length === 0) return null;
+    const index = paretoData.findIndex(item => item.cumulative_percentage >= 80);
+    const count = index === -1 ? paretoData.length : index + 1;
+    const percentage = index === -1 ? 100 : paretoData[index].cumulative_percentage;
+    return {
+      count,
+      percentage: Math.round(percentage)
+    };
+  }, [paretoData]);
+
   return (
-    <section className={`py-16 ${className}`}>
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200">
-              Pareto Analizi - Kabahat Dağılımı
-            </h3>
-            <div className="flex items-center gap-4 text-body-sm text-neutral-600 dark:text-neutral-400">
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-primary-500 rounded"></div>
-                <span>Ceza Sayısı</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-3 h-3 bg-semantic-error rounded"></div>
-                <span>Kümülatif %</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-0.5 bg-semantic-warning" style={{borderTop: '2px dashed #F59E0B'}}></div>
-                <span>%80 Kuralı</span>
-              </div>
-            </div>
+    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm ${className}`}>
+      <div className="flex items-center justify-between mb-6">
+        <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200">
+          Pareto Analizi - Kabahat Dağılımı
+        </h3>
+        <div className="flex items-center gap-4 text-body-sm text-neutral-600 dark:text-neutral-400">
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-primary-500 rounded"></div>
+            <span>Ceza Sayısı</span>
           </div>
-          <div className="h-96">
-            <Chart type="bar" data={data} options={options} />
+          <div className="flex items-center gap-2">
+            <div className="w-3 h-3 bg-semantic-error rounded"></div>
+            <span>Kümülatif %</span>
           </div>
-          <div className="mt-4 text-body-sm text-neutral-600 dark:text-neutral-400">
-            <p>
-              <strong>Analiz:</strong> İlk 4 kabahat türü toplam cezaların %80'ini oluşturuyor. 
-              Bu alanlara odaklanarak cezaları %80 oranında azaltmak mümkün.
-            </p>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-0.5 bg-semantic-warning" style={{borderTop: '2px dashed #F59E0B'}}></div>
+            <span>%80 Kuralı</span>
           </div>
         </div>
       </div>
-    </section>
+      <div className="h-96">
+        <Chart type="bar" data={data} options={options} />
+      </div>
+      {dynamicAnalysis && (
+        <div className="mt-4 text-body-sm text-neutral-600 dark:text-neutral-400">
+          <p>
+            <strong>Analiz:</strong> İlk {dynamicAnalysis.count} kabahat türü toplam cezaların %{dynamicAnalysis.percentage}'ini oluşturuyor. 
+            Bu alanlara odaklanarak cezaları %{dynamicAnalysis.percentage} oranında azaltmak mümkündür.
+          </p>
+        </div>
+      )}
+    </div>
   );
 };
 

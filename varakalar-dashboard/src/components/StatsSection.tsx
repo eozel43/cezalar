@@ -1,6 +1,5 @@
 import React from 'react';
-import { TrendingUp, AlertTriangle, FileText, Layers, Hash, BarChart3 } from 'lucide-react';
-import { Ozet } from '../types';
+import { TrendingUp, AlertTriangle, FileText, Hash, BarChart3, ArrowUpRight, ArrowDownRight, Layers, Coins } from 'lucide-react';
 
 interface StatCardProps {
   title: string;
@@ -8,24 +7,75 @@ interface StatCardProps {
   subtitle?: string;
   icon: React.ReactNode;
   className?: string;
+  change?: number;
+  comparisonLabel?: string;
+  invertTrend?: boolean;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, className = '' }) => {
+const TrendBadge: React.FC<{ change: number | undefined; label: string; invertTrend?: boolean }> = ({ change, label, invertTrend = false }) => {
+  if (change === undefined) return null;
+  
+  const isZero = Math.abs(change) < 0.01;
+  const isPositive = change > 0;
+  
+  let colorClass = '';
+  let Icon = null;
+  
+  if (isZero) {
+    colorClass = 'bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400';
+  } else if (isPositive) {
+    colorClass = invertTrend 
+      ? 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30' 
+      : 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30';
+    Icon = ArrowUpRight;
+  } else {
+    colorClass = invertTrend 
+      ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/20 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/30' 
+      : 'bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400 border border-rose-100 dark:border-rose-900/30';
+    Icon = ArrowDownRight;
+  }
+  
   return (
-    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 hover:scale-102 ${className}`}>
+    <div className="flex flex-wrap items-center gap-1 mt-2">
+      <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold ${colorClass}`}>
+        {Icon && <Icon className="w-3 h-3" />}
+        {isZero ? 'Değişim yok' : `${isPositive ? '+' : ''}${change.toFixed(1)}%`}
+      </span>
+      <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-normal">
+        {label}
+      </span>
+    </div>
+  );
+};
+
+const StatCard: React.FC<StatCardProps> = ({ 
+  title, 
+  value, 
+  subtitle, 
+  icon, 
+  className = '', 
+  change, 
+  comparisonLabel, 
+  invertTrend = false 
+}) => {
+  return (
+    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-6 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 ${className}`}>
       <div className="flex items-start justify-between">
-        <div className="flex-1">
+        <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
             {icon}
-            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400">{title}</span>
+            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400 truncate">{title}</span>
           </div>
-          <div className="text-heading-xl font-bold text-neutral-900 dark:text-neutral-200 mb-1">
+          <div className="text-heading-xl font-bold text-neutral-900 dark:text-neutral-200 mb-1 truncate">
             {value}
           </div>
           {subtitle && (
-            <div className="text-body-sm text-neutral-500 dark:text-neutral-500">
+            <div className="text-body-sm text-neutral-500 dark:text-neutral-500 truncate text-ellipsis overflow-hidden">
               {subtitle}
             </div>
+          )}
+          {comparisonLabel && (
+            <TrendBadge change={change} label={comparisonLabel} invertTrend={invertTrend} />
           )}
         </div>
       </div>
@@ -34,19 +84,35 @@ const StatCard: React.FC<StatCardProps> = ({ title, value, subtitle, icon, class
 };
 
 interface StatsSectionProps {
-  ozet: Ozet;
+  metrics: {
+    totalCount: number;
+    totalAmount: number;
+    averageAmount: number;
+    uniqueVehiclesCount: number;
+    repeatOffenderRate: number;
+    menPenaltyRate: number;
+    kabahatTuruSayisi: number;
+  };
+  changes: {
+    totalCount?: number;
+    totalAmount?: number;
+    averageAmount?: number;
+    uniqueVehiclesCount?: number;
+    repeatOffenderRate?: number;
+    menPenaltyRate?: number;
+    kabahatTuruSayisi?: number;
+  };
   enYayginKabahat?: string;
   enYayginKabahatSayisi?: number;
-  kabahatTuruSayisi?: number;
-  ortalamaKabahatSayisi?: number;
+  selectedPeriodLabel?: string;
 }
 
 const StatsSection: React.FC<StatsSectionProps> = ({ 
-  ozet, 
+  metrics, 
+  changes,
   enYayginKabahat, 
   enYayginKabahatSayisi,
-  kabahatTuruSayisi,
-  ortalamaKabahatSayisi 
+  selectedPeriodLabel
 }) => {
   // Para formatı için yardımcı fonksiyon
   const formatCurrency = (amount: number) => {
@@ -58,54 +124,88 @@ const StatsSection: React.FC<StatsSectionProps> = ({
     }).format(amount);
   };
 
-  const primaryStats = [
+  const row1Stats = [
     {
       title: 'Toplam Ceza Sayısı',
-      value: ozet.toplam_sayisi.toLocaleString('tr-TR'),
+      value: metrics.totalCount.toLocaleString('tr-TR'),
       subtitle: 'Kayıtlı toplam varaka',
-      icon: <FileText className="w-6 h-6 text-primary-500" />,
+      icon: <FileText className="w-5 h-5 text-indigo-500" />,
+      change: changes.totalCount,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // Ceza sayısı artışı kötüdür (kırmızı)
+      className: 'border-indigo-100 dark:border-indigo-900/30'
     },
     {
       title: 'Toplam Ceza Tutarı',
-      value: formatCurrency(ozet.toplam_ceza_tutari),
-      subtitle: 'Tüm cezaların toplam tutarı',
-      icon: <TrendingUp className="w-6 h-6 text-primary-500" />,
+      value: formatCurrency(metrics.totalAmount),
+      subtitle: 'Cezaların toplamı',
+      icon: <TrendingUp className="w-5 h-5 text-amber-500" />,
+      change: changes.totalAmount,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // Ceza tutarı artışı kötüdür (kırmızı)
+      className: 'border-amber-100 dark:border-amber-900/30 font-semibold'
     },
     {
       title: 'Ortalama Ceza Tutarı',
-      value: formatCurrency(ozet.ortalama_ceza),
+      value: formatCurrency(metrics.averageAmount),
       subtitle: 'Varaka başına ortalama ceza',
-      icon: <AlertTriangle className="w-6 h-6 text-primary-500" />,
+      icon: <Coins className="w-5 h-5 text-yellow-500" />,
+      change: changes.averageAmount,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // Ortalama ceza artışı kötüdür (kırmızı)
+      className: 'border-yellow-100 dark:border-yellow-900/30'
     },
   ];
 
-  const kabahatStats = [
+  const row2Stats = [
+    {
+      title: 'Benzersiz Araç Sayısı',
+      value: metrics.uniqueVehiclesCount.toLocaleString('tr-TR'),
+      subtitle: 'Ceza alan farklı araçlar',
+      icon: <Hash className="w-5 h-5 text-blue-500" />,
+      change: changes.uniqueVehiclesCount,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // Araç sayısı artışı kötüdür (kırmızı)
+      className: 'border-blue-100 dark:border-blue-900/30'
+    },
+    {
+      title: 'Mükerrer İhlal Oranı',
+      value: `%${metrics.repeatOffenderRate.toFixed(1)}`,
+      subtitle: 'Birden fazla ceza alanlar',
+      icon: <AlertTriangle className="w-5 h-5 text-rose-500" />,
+      change: changes.repeatOffenderRate,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // Mükerrer oranı artışı kötüdür (kırmızı)
+      className: 'border-rose-100 dark:border-rose-900/30'
+    },
+    {
+      title: 'Men Cezası Oranı',
+      value: `%${metrics.menPenaltyRate.toFixed(1)}`,
+      subtitle: 'Men edilen araçların oranı',
+      icon: <BarChart3 className="w-5 h-5 text-emerald-500" />,
+      change: changes.menPenaltyRate,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: false, // Men cezası oranı artışı yeşildir
+      className: 'border-emerald-100 dark:border-emerald-900/30'
+    },
     {
       title: 'Farklı Kabahat Türü',
-      value: kabahatTuruSayisi?.toLocaleString('tr-TR') || 0,
-      subtitle: 'Benzersiz kabahat kategorileri',
-      icon: <Layers className="w-6 h-6 text-blue-500" />,
-    },
-    {
-      title: 'Kabahat Sayısı',
-      value: ozet.toplam_sayisi.toLocaleString('tr-TR'),
-      subtitle: 'Toplam işlenen kabahat',
-      icon: <Hash className="w-6 h-6 text-blue-500" />,
-    },
-    {
-      title: 'Ortalama Kabahat Sayısı',
-      value: ortalamaKabahatSayisi?.toLocaleString('tr-TR') || 0,
-      subtitle: 'Tür başına ortalama sıklık',
-      icon: <BarChart3 className="w-6 h-6 text-blue-500" />,
+      value: metrics.kabahatTuruSayisi.toLocaleString('tr-TR'),
+      subtitle: 'Benzersiz ihlal kategorileri',
+      icon: <Layers className="w-5 h-5 text-sky-500" />,
+      change: changes.kabahatTuruSayisi,
+      comparisonLabel: selectedPeriodLabel,
+      invertTrend: true, // İhlal çeşitliliği artışı kötüdür (kırmızı)
+      className: 'border-sky-100 dark:border-sky-900/30'
     },
   ];
 
   return (
-    <section className="py-16">
+    <section className="py-10">
       <div className="mx-auto max-w-7xl px-6">
-        {/* Ana Finansal İstatistikler */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-          {primaryStats.map((stat, index) => (
+        {/* Row 1 KPI Grid (3 columns for financial/general totals - gives more horizontal width) */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {row1Stats.map((stat, index) => (
             <div
               key={index}
               className="animate-slide-up"
@@ -116,24 +216,24 @@ const StatsSection: React.FC<StatsSectionProps> = ({
           ))}
         </div>
 
-        {/* Kabahat Detay İstatistikleri */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {kabahatStats.map((stat, index) => (
+        {/* Row 2 KPI Grid (4 columns for detailed indicators) */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {row2Stats.map((stat, index) => (
             <div
               key={index}
               className="animate-slide-up"
               style={{ animationDelay: `${(index + 3) * 50}ms` }}
             >
-              <StatCard {...stat} className="border-blue-100 dark:border-blue-900/30 bg-blue-50/30 dark:bg-blue-900/10" />
+              <StatCard {...stat} />
             </div>
           ))}
         </div>
 
         {enYayginKabahat && enYayginKabahatSayisi && (
-          <div className="mt-12 text-center">
-            <div className="inline-flex items-center gap-2 bg-primary-50 dark:bg-primary-900/20 px-6 py-3 rounded-full border border-primary-200 dark:border-primary-800">
-              <AlertTriangle className="w-5 h-5 text-primary-600 dark:text-primary-400" />
-              <span className="text-primary-900 dark:text-primary-100 font-medium">
+          <div className="mt-8 text-center">
+            <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 px-6 py-3 rounded-full border border-indigo-200 dark:border-indigo-800">
+              <AlertTriangle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
+              <span className="text-indigo-900 dark:text-indigo-100 font-medium">
                 En yaygın kabahat: <span className="font-bold">{enYayginKabahat}</span> ({enYayginKabahatSayisi.toLocaleString('tr-TR')} adet)
               </span>
             </div>

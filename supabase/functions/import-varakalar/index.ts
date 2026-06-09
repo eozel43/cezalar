@@ -27,6 +27,49 @@ Deno.serve(async (req) => {
             throw new Error('Supabase yapılandırması eksik');
         }
 
+        // 1. Yetkilendirme Başlığı Kontrolü
+        const authHeader = req.headers.get('authorization');
+        if (!authHeader) {
+            throw new Error('Yetkisiz işlem: Yetkilendirme başlığı eksik');
+        }
+
+        const token = authHeader.replace('Bearer ', '');
+
+        // 2. Kullanıcı Kimlik Doğrulaması (Token Doğrulama)
+        const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'apikey': serviceRoleKey
+            }
+        });
+
+        if (!userResponse.ok) {
+            throw new Error('Yetkisiz işlem: Geçersiz oturum anahtarı');
+        }
+
+        const currentUserData = await userResponse.json();
+        const currentUserId = currentUserData.id;
+
+        // 3. Kullanıcı Durum Kontrolü (Aktif olup olmadığı kontrolü)
+        const statusCheckResponse = await fetch(
+            `${supabaseUrl}/rest/v1/user_profiles?user_id=eq.${currentUserId}&select=status`,
+            {
+                headers: {
+                    'Authorization': `Bearer ${serviceRoleKey}`,
+                    'apikey': serviceRoleKey
+                }
+            }
+        );
+
+        if (!statusCheckResponse.ok) {
+            throw new Error('Yetkisiz işlem: Kullanıcı durumu kontrol edilemedi');
+        }
+
+        const statusData = await statusCheckResponse.json();
+        if (!statusData || statusData.length === 0 || statusData[0].status !== 'active') {
+            throw new Error('Yetkisiz işlem: Bu işlem için aktif bir kullanıcı hesabı gereklidir');
+        }
+
         // Track deleted record count
         let deletedCount = 0;
 

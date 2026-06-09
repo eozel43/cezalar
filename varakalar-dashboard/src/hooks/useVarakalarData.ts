@@ -31,14 +31,12 @@ export const useVarakalarData = () => {
       const ozet = calculateOzet(varakalar);
       const pareto_analizi = calculatePareto(varakalar);
       const top_3_plaka_ceza = calculateTopPlates(varakalar);
-      const men_ceslari = varakalar.filter(v => v.ceza_turu === 'men' || v.ceza_detay);
 
       setData({
         varakalar,
         ozet,
         pareto_analizi,
-        top_3_plaka_ceza,
-        men_ceslari: men_ceslari as any
+        top_3_plaka_ceza
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bilinmeyen hata');
@@ -49,21 +47,6 @@ export const useVarakalarData = () => {
 
   useEffect(() => {
     fetchData();
-
-    // Subscribe to real-time changes
-    const subscription = supabase
-      .channel('varakalar_changes')
-      .on('postgres_changes', 
-        { event: '*', schema: 'public', table: 'varakalar' },
-        () => {
-          fetchData(); // Reload data on any change
-        }
-      )
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
   return { data, loading, error, refetch: fetchData };

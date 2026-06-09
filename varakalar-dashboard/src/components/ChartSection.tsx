@@ -219,7 +219,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({ varakalar, className = '' }
       },
       {
         type: 'bar' as const,
-        label: 'Yil-Ay Kabahat Sayisi',
+        label: 'Yıl-Ay Kabahat Sayısı',
         data: monthlyLabels.map(label => monthlyBuckets[label]),
         backgroundColor: '#F59E0B',
         borderColor: '#F59E0B',
@@ -231,7 +231,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({ varakalar, className = '' }
   };
 
   return (
-    <section className={`py-16 ${className}`}>
+    <section className={`py-10 ${className}`}>
       <div className="mx-auto max-w-7xl px-6">
         {/* Section Header */}
         <div className="mb-8">
@@ -243,7 +243,7 @@ const ChartSection: React.FC<ChartSectionProps> = ({ varakalar, className = '' }
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8">
+        <div className="space-y-8">
           {/* Pie Chart */}
           <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
             <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200 mb-6">
@@ -253,15 +253,15 @@ const ChartSection: React.FC<ChartSectionProps> = ({ varakalar, className = '' }
               <Pie data={pieData} options={pieOptions} />
             </div>
           </div>
-        </div>
 
-        {/* Monthly Kabahat Counts */}
-        <div className="mt-8 bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
-          <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200 mb-6">
-            Yil-Ay Kabahat Sayilari ve Trend
-          </h3>
-          <div className="h-80">
-            <Chart type="bar" data={monthlyData} options={barOptions} />
+          {/* Monthly Kabahat Counts */}
+          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-8 shadow-sm">
+            <h3 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-200 mb-6">
+              Yıl-Ay Kabahat Sayıları ve Trend
+            </h3>
+            <div className="h-96">
+              <Chart type="bar" data={monthlyData} options={barOptions} />
+            </div>
           </div>
         </div>
       </div>
