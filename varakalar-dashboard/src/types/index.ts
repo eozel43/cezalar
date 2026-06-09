@@ -11,6 +11,7 @@ export interface Varaka {
   mevsim: string;
   ceza_turu?: string;
   ceza_detay?: string;
+  created_at?: string;
 }
 
 export interface ParetoAnalizi {

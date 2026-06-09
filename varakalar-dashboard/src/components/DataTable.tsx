@@ -102,6 +102,28 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
     };
   }, [sortedData]);
 
+  // Son güncelleme tarihi hesaplama (En yeni created_at değeri)
+  const sonGuncellemeTarihi = useMemo(() => {
+    if (!data || data.length === 0) return new Date().toLocaleDateString('tr-TR');
+    
+    const validDates = data
+      .map(v => v.created_at ? new Date(v.created_at) : null)
+      .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
+      
+    if (validDates.length === 0) {
+      return new Date().toLocaleDateString('tr-TR');
+    }
+    
+    const latestDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+    return latestDate.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, [data]);
+
   return (
     <section className={`py-16 ${className}`}>
       <div className="mx-auto max-w-7xl px-6">
@@ -249,7 +271,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                 )}
               </div>
               <div className="text-body-sm text-neutral-500 dark:text-neutral-400">
-                Son güncelleme: {new Date().toLocaleDateString('tr-TR')}
+                Son güncelleme: {sonGuncellemeTarihi}
               </div>
             </div>
           </div>

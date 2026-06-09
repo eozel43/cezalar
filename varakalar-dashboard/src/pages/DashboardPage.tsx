@@ -217,6 +217,26 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
     return 'Önceki aya göre';
   }, [selectedYear, selectedMonth]);
 
+  // Son güncelleme tarihi hesaplama (En yeni created_at değeri)
+  const sonGuncellemeTarihi = useMemo(() => {
+    if (!data?.varakalar || data.varakalar.length === 0) return '';
+    
+    const validDates = data.varakalar
+      .map(v => v.created_at ? new Date(v.created_at) : null)
+      .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
+      
+    if (validDates.length === 0) return '';
+    
+    const latestDate = new Date(Math.max(...validDates.map(d => d.getTime())));
+    return latestDate.toLocaleDateString('tr-TR', {
+      day: 'numeric',
+      month: 'long',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }, [data]);
+
   return (
     <div ref={dashboardRef} className="pb-12">
       {/* Filters and Date Range Information */}
@@ -233,6 +253,11 @@ const DashboardPage: React.FC<DashboardPageProps> = ({ data, dateRangeText }) =>
               <h3 className="text-body font-medium text-blue-900 dark:text-blue-100">Zabıt Varaka Tarih Aralığı</h3>
               <p className="text-body-sm text-blue-700 dark:text-blue-300 mt-1">
                 Yüklenen veriler <span className="font-semibold">{dateRangeText}</span> tarihleri arasını kapsamaktadır.
+                {sonGuncellemeTarihi && (
+                  <span className="block sm:inline sm:ml-2 text-blue-600 dark:text-blue-400 font-semibold">
+                    (Son Güncelleme: {sonGuncellemeTarihi})
+                  </span>
+                )}
               </p>
             </div>
           </div>
