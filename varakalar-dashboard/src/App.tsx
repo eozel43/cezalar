@@ -176,7 +176,7 @@ function AppContent() {
               <p className="text-body text-neutral-600 dark:text-neutral-400 font-normal">
                 {isPending 
                   ? 'Hesabınız başarıyla oluşturuldu ancak henüz onaylanmadı. Lütfen yöneticinin hesabınızı onaylamasını bekleyin.' 
-                  : 'Hesabınız onaylanmamış, reddedilmiş veya kısıtlanmış olabilir. Lütfen sistem yöneticisi ile iletişime geçin.'}
+                  : 'Hesabınız onaylanmamış, reddedilmiş veya kısıtlanmış olabilir. Lütfen sistem yöneticisi ile iletişime geçin. Sayfa açılmıyorsa F5 ile sayfayı yenileyin.'}
               </p>
             </div>
             
