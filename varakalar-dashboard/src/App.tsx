@@ -19,6 +19,16 @@ function AppContent() {
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
 
+  const handleUploadClick = () => {
+    if (!user) {
+      setShowAuthModal(true);
+    } else if (profile?.status !== 'active') {
+      alert('Hesabınız henüz onaylanmadı. Lütfen admin onayını bekleyin.');
+    } else {
+      setShowUploadModal(true);
+    }
+  };
+
   // Escape tuşu ile modalları kapatma desteği
   React.useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -215,16 +225,6 @@ function AppContent() {
       </div>
     );
   }
-
-  const handleUploadClick = () => {
-    if (!user) {
-      setShowAuthModal(true);
-    } else if (profile?.status !== 'active') {
-      alert('Hesabınız henüz onaylanmadı. Lütfen admin onayını bekleyin.');
-    } else {
-      setShowUploadModal(true);
-    }
-  };
 
   return (
     <div className="min-h-screen bg-background-page">
