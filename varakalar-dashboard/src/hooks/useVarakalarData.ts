@@ -1,14 +1,40 @@
 import { useState, useEffect } from 'react';
-import { VarakalarData, Varaka, ParetoAnalizi, TopPlakaCeza } from '../types';
+import { VarakalarData } from '../types';
 import { supabase } from '../lib/supabase';
 import { calculateOzet, calculatePareto, calculateTopPlates } from '../lib/calculations';
+import { useAuth } from '../contexts/useAuth';
 
 export const useVarakalarData = () => {
   const [data, setData] = useState<VarakalarData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { user, profile, loading: authLoading } = useAuth();
 
   const fetchData = async () => {
+    // If authentication session is still loading, wait
+    if (authLoading) return;
+
+    // If there is no authenticated user, reset state and do not query Supabase
+    if (!user) {
+      setData(null);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+
+    // Wait for the user profile to load
+    if (!profile) {
+      return;
+    }
+
+    // If the profile is not active, do not query data and set appropriate error/restricted state
+    if (profile.status !== 'active') {
+      setData(null);
+      setError('Hesabınız henüz onaylanmamış veya kısıtlanmış.');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
@@ -47,7 +73,8 @@ export const useVarakalarData = () => {
 
   useEffect(() => {
     fetchData();
-  }, []);
+  }, [user, profile, authLoading]);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, loading: loading || authLoading, error, refetch: fetchData };
 };
+
