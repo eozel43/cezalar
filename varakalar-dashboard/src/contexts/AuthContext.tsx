@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState } from 'react';
+import React, { createContext, useEffect, useState, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -27,6 +27,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const currentUserIdRef = useRef<string | null>(null);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -64,6 +65,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(user);
         
         if (user) {
+          currentUserIdRef.current = user.id;
           const profileData = await fetchUserProfile(user.id);
           setProfile(profileData);
         }
@@ -74,11 +76,23 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     loadUser();
 
-    // Listen for auth changes - NO async operations in callback
+    // Listen for auth changes
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
+        const sessionUserId = session?.user?.id || null;
         setUser(session?.user || null);
-        if (!session?.user) {
+
+        if (sessionUserId) {
+          if (currentUserIdRef.current !== sessionUserId) {
+            currentUserIdRef.current = sessionUserId;
+            setLoading(true);
+            fetchUserProfile(sessionUserId).then((profileData) => {
+              setProfile(profileData);
+              setLoading(false);
+            });
+          }
+        } else {
+          currentUserIdRef.current = null;
           setProfile(null);
         }
       }
