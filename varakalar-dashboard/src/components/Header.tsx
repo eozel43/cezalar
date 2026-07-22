@@ -7,9 +7,11 @@ interface HeaderProps {
   onUploadClick: () => void;
   onAuthClick: () => void;
   onAdminClick: () => void;
+  onToggleViewMode?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClick }) => {
+const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClick, onToggleViewMode }) => {
+
   const { user, profile, signOut } = useAuth();
   const { theme, setTheme } = useTheme();
 
@@ -39,6 +41,18 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                 </svg>
               )}
             </button>
+
+            {/* View Switcher Toggle Button (1-Click Rollback / Switch) */}
+            {onToggleViewMode && (
+              <button
+                onClick={onToggleViewMode}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-semibold transition-all shadow-sm"
+                title="Yeni Kurumsal (Sidebar) Görünüme Geç"
+              >
+                <span>🚀 Kurumsal Moda Geç</span>
+              </button>
+            )}
+
 
             {user ? (
               <>

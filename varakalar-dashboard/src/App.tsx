@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Header from './components/Header';
+import SidebarLayout from './components/SidebarLayout';
 import Loading from './components/Loading';
 import ExcelUpload from './components/ExcelUpload';
 import AuthModal from './components/AuthModal';
@@ -14,10 +15,25 @@ function AppContent() {
   const { data, loading, error, refetch } = useVarakalarData();
   const { user, profile, signOut } = useAuth();
   
+  // View mode state (1-Click Switch / Rollback)
+  const [viewMode, setViewMode] = useState<'enterprise' | 'classic'>(() => {
+    const storedViewMode = localStorage.getItem('view_mode');
+    return storedViewMode === 'classic' || storedViewMode === 'enterprise'
+      ? storedViewMode
+      : 'enterprise';
+  });
+
+  const handleToggleViewMode = () => {
+    const nextMode = viewMode === 'enterprise' ? 'classic' : 'enterprise';
+    setViewMode(nextMode);
+    localStorage.setItem('view_mode', nextMode);
+  };
+
   // Modal states
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+
 
   const handleUploadClick = () => {
     if (!user) {
@@ -226,14 +242,15 @@ function AppContent() {
     );
   }
 
-  return (
-    <div className="min-h-screen bg-background-page">
-      <Header 
-        onUploadClick={handleUploadClick}
-        onAuthClick={() => setShowAuthModal(true)}
-        onAdminClick={() => setShowAdminPanel(true)}
-      />
-      
+  const routes = (
+    <Routes>
+      <Route path="/" element={<DashboardPage data={data} dateRangeText={dateRangeText} />} />
+      <Route path="/detay" element={<DetailsPage varakalar={data.varakalar} />} />
+    </Routes>
+  );
+
+  const sharedModals = (
+    <>
       {/* Auth Modal */}
       {showAuthModal && (
         <AuthModal onClose={() => setShowAuthModal(false)} />
@@ -295,12 +312,38 @@ function AppContent() {
           </div>
         </div>
       )}
+    </>
+  );
+
+  if (viewMode === 'enterprise') {
+    return (
+      <SidebarLayout
+        onUploadClick={handleUploadClick}
+        onAuthClick={() => setShowAuthModal(true)}
+        onAdminClick={() => setShowAdminPanel(true)}
+        onToggleViewMode={handleToggleViewMode}
+        varakalar={data?.varakalar}
+      >
+        {sharedModals}
+        {routes}
+      </SidebarLayout>
+    );
+  }
+
+
+  return (
+    <div className="min-h-screen bg-background-page">
+      <Header
+        onUploadClick={handleUploadClick}
+        onAuthClick={() => setShowAuthModal(true)}
+        onAdminClick={() => setShowAdminPanel(true)}
+        onToggleViewMode={handleToggleViewMode}
+      />
+
+      {sharedModals}
       
       <main className="mx-auto max-w-7xl">
-        <Routes>
-          <Route path="/" element={<DashboardPage data={data} dateRangeText={dateRangeText} />} />
-          <Route path="/detay" element={<DetailsPage varakalar={data.varakalar} />} />
-        </Routes>
+        {routes}
       </main>
       
       {/* Footer */}
@@ -316,6 +359,7 @@ function AppContent() {
       </footer>
     </div>
   );
+
 }
 
 function App() {

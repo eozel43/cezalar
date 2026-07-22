@@ -59,18 +59,20 @@ const StatCard: React.FC<StatCardProps> = ({
   invertTrend = false 
 }) => {
   return (
-    <div className={`bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-6 shadow-sm transition-all duration-250 hover:shadow-md hover:-translate-y-1 ${className}`}>
+    <div className={`bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200/80 dark:border-neutral-800/80 p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${className}`}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
-            {icon}
-            <span className="text-body-sm font-medium text-neutral-700 dark:text-neutral-400 truncate">{title}</span>
+            <div className="p-2 rounded-xl bg-slate-50 dark:bg-neutral-800/80">
+              {icon}
+            </div>
+            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider truncate">{title}</span>
           </div>
-          <div className="text-heading-xl font-bold text-neutral-900 dark:text-neutral-200 mb-1 truncate">
+          <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-neutral-100 mb-1 truncate tracking-tight tabular-nums">
             {value}
           </div>
           {subtitle && (
-            <div className="text-body-sm text-neutral-500 dark:text-neutral-500 truncate text-ellipsis overflow-hidden">
+            <div className="text-xs text-slate-500 dark:text-neutral-500 truncate text-ellipsis overflow-hidden font-normal">
               {subtitle}
             </div>
           )}
@@ -82,6 +84,7 @@ const StatCard: React.FC<StatCardProps> = ({
     </div>
   );
 };
+
 
 interface StatsSectionProps {
   metrics: {
