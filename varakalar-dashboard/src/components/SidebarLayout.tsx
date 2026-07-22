@@ -258,6 +258,7 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({
 
         {/* Sidebar Navigation */}
         <aside
+          id="mobile-sidebar"
           className={`fixed lg:sticky top-0 left-0 z-40 h-screen lg:h-full bg-slate-900 dark:bg-neutral-900 border-r border-slate-800 text-slate-300 flex flex-col transition-all duration-300 ${
             isCollapsed ? 'lg:w-20' : 'lg:w-64'
           } ${mobileOpen ? 'translate-x-0 w-64' : '-translate-x-full lg:translate-x-0'}`}
@@ -412,10 +413,13 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({
             <div className="flex items-center gap-4">
               {/* Mobile menu trigger */}
               <button
-                onClick={() => setMobileOpen(true)}
+                onClick={() => setMobileOpen(current => !current)}
                 className="lg:hidden p-2 rounded-lg text-slate-600 dark:text-neutral-400 hover:bg-slate-100 dark:hover:bg-neutral-800"
+                aria-label={mobileOpen ? 'Menüyü kapat' : 'Menüyü aç'}
+                aria-expanded={mobileOpen}
+                aria-controls="mobile-sidebar"
               >
-                <Menu className="w-6 h-6" />
+                {mobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
               </button>
 
               <div>
