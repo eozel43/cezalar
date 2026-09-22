@@ -28,15 +28,15 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
             {/* Theme Toggle Button */}
             <button
               onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors text-neutral-600 dark:text-neutral-400"
-              aria-label="Toggle Theme"
+              className="p-2 rounded-md hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150 text-neutral-600 dark:text-neutral-400"
+              aria-label="Tema Değiştir"
             >
               {theme === 'dark' ? (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364-6.364l-.707.707M6.343 17.657l-.707.707m12.728 0l-.707-.707M6.343 6.343l-.707-.707M12 5a7 7 0 100 14 7 7 0 000-14z" />
                 </svg>
               ) : (
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
                 </svg>
               )}
@@ -46,13 +46,12 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
             {onToggleViewMode && (
               <button
                 onClick={onToggleViewMode}
-                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-semibold transition-all shadow-sm"
-                title="Yeni Kurumsal (Sidebar) Görünüme Geç"
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 hover:bg-indigo-700 text-white rounded-md text-xs font-semibold transition-colors duration-150 shadow-sm"
+                aria-label="Kurumsal moda geç"
               >
                 <span>🚀 Kurumsal Moda Geç</span>
               </button>
             )}
-
 
             {user ? (
               <>
@@ -63,9 +62,9 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                   <button
                     onClick={onAdminClick}
                     aria-label="Admin Paneli"
-                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-all duration-200 hover:scale-105"
+                    className="flex items-center gap-2 px-4 py-2 bg-purple-500 text-white rounded-md hover:bg-purple-600 transition-transform duration-150 hover:scale-105 active:scale-95"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                     </svg>
                     <span className="hidden md:inline">Admin Panel</span>
@@ -75,9 +74,9 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                   <button
                     onClick={onUploadClick}
                     aria-label="Excel Dosyası Yükle"
-                    className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-all duration-200 hover:scale-105 hover:shadow-md"
+                    className="flex items-center gap-2 px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-transform duration-150 hover:scale-105 active:scale-95 hover:shadow-sm"
                   >
-                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="size-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
                     </svg>
                     <span className="hidden md:inline">Excel Yükle</span>
@@ -85,7 +84,8 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
                 )}
                 <button
                   onClick={() => signOut()}
-                  className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors"
+                  className="px-4 py-2 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-md hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-150"
+                  aria-label="Oturumu kapat"
                 >
                   Çıkış
                 </button>
@@ -93,11 +93,12 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
             ) : (
               <button
                 onClick={onAuthClick}
-                className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-all duration-200 hover:scale-105"
+                className="px-4 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-transform duration-150 hover:scale-105 active:scale-95"
               >
                 Giriş Yap
               </button>
             )}
+
           </div>
         </div>
 

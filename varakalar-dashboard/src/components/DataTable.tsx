@@ -45,13 +45,13 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
   // Sıralama ikonu bileşeni
   const SortIcon: React.FC<{ column: keyof Varaka }> = ({ column }) => {
     if (sortConfig?.key !== column) {
-      return <div className="w-4 h-4" />;
+      return <div className="size-4" aria-hidden="true" />;
     }
 
     return sortConfig.direction === 'asc' ? (
-      <ChevronUp className="w-4 h-4 text-neutral-500" />
+      <ChevronUp className="size-4 text-neutral-500" aria-hidden="true" />
     ) : (
-      <ChevronDown className="w-4 h-4 text-neutral-500" />
+      <ChevronDown className="size-4 text-neutral-500" aria-hidden="true" />
     );
   };
 
@@ -75,18 +75,19 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
     if (varaka.ceza_turu === 'men') {
       return (
         <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-warning/10 text-semantic-warning dark:bg-amber-900/20 dark:text-amber-400">
-          <Ban className="w-3 h-3" />
+          <Ban className="size-3" aria-hidden="true" />
           {varaka.ceza_detay || 'Men Cezası'}
         </span>
       );
     }
     return (
-      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-success/10 text-semantic-success dark:bg-emerald-900/20 dark:text-emerald-400">
-        <DollarSign className="w-3 h-3" />
+      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-success/10 text-semantic-success dark:bg-emerald-900/20 dark:text-emerald-400 tabular-nums">
+        <DollarSign className="size-3" aria-hidden="true" />
         {formatCurrency(varaka.ceza_miktari)}
       </span>
     );
   };
+
 
   // Stats hesaplama
   const stats = useMemo(() => {
@@ -128,10 +129,10 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
     <section className={`py-16 ${className}`}>
       <div className="mx-auto max-w-7xl px-6">
         <div className="mb-8">
-          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2">
+          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2 text-balance">
             📋 Varaka Detay Listesi
           </h2>
-          <p className="text-body text-neutral-600 dark:text-neutral-400">
+          <p className="text-body text-neutral-600 dark:text-neutral-400 text-pretty">
             Tüm ceza kayıtlarını detaylı olarak görüntüle
           </p>
         </div>
@@ -139,19 +140,19 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 text-center">
-            <div className="text-xl font-bold text-neutral-900 dark:text-neutral-200">{stats.toplamKayit}</div>
+            <div className="text-xl font-bold text-neutral-900 dark:text-neutral-200 tabular-nums">{stats.toplamKayit.toLocaleString('tr-TR')}</div>
             <div className="text-body-sm text-neutral-600 dark:text-neutral-400">Toplam Kayıt</div>
           </div>
           <div className="bg-semantic-success/10 dark:bg-emerald-900/10 rounded-lg border border-semantic-success/20 dark:border-emerald-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-semantic-success dark:text-emerald-400">{stats.paraCezalari}</div>
+            <div className="text-xl font-bold text-semantic-success dark:text-emerald-400 tabular-nums">{stats.paraCezalari.toLocaleString('tr-TR')}</div>
             <div className="text-body-sm text-semantic-success/80 dark:text-emerald-500/80">Para Cezası</div>
           </div>
           <div className="bg-semantic-warning/10 dark:bg-amber-900/10 rounded-lg border border-semantic-warning/20 dark:border-amber-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-semantic-warning dark:text-amber-400">{stats.menCezalari}</div>
+            <div className="text-xl font-bold text-semantic-warning dark:text-amber-400 tabular-nums">{stats.menCezalari.toLocaleString('tr-TR')}</div>
             <div className="text-body-sm text-semantic-warning/80 dark:text-amber-500/80">Men Cezası</div>
           </div>
           <div className="bg-primary-50 dark:bg-primary-900/10 rounded-lg border border-primary-200 dark:border-primary-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-primary-700 dark:text-primary-400">{formatCurrency(stats.toplamParaCezasi)}</div>
+            <div className="text-xl font-bold text-primary-700 dark:text-primary-400 tabular-nums">{formatCurrency(stats.toplamParaCezasi)}</div>
             <div className="text-body-sm text-primary-600 dark:text-primary-500">Toplam Tutar</div>
           </div>
         </div>
@@ -164,7 +165,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
               <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
                 <tr>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('sira_no')}
                   >
                     <div className="flex items-center gap-2">
@@ -173,7 +174,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('tarih')}
                   >
                     <div className="flex items-center gap-2">
@@ -182,7 +183,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('plaka_no')}
                   >
                     <div className="flex items-center gap-2">
@@ -191,7 +192,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('isim')}
                   >
                     <div className="flex items-center gap-2">
@@ -200,7 +201,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('kabahat')}
                   >
                     <div className="flex items-center gap-2">
@@ -209,7 +210,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                     </div>
                   </th>
                   <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-200"
+                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
                     onClick={() => handleSort('ceza_miktari')}
                   >
                     <div className="flex items-center gap-2">
@@ -225,12 +226,12 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                 {sortedData.map((varaka, index) => (
                   <tr 
                     key={`${varaka.sira_no}-${index}`}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-200"
+                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-150"
                   >
-                    <td className="px-6 py-4 text-body text-neutral-900 dark:text-neutral-200 font-medium">
+                    <td className="px-6 py-4 text-body text-neutral-900 dark:text-neutral-200 font-medium tabular-nums">
                       {varaka.sira_no}
                     </td>
-                    <td className="px-6 py-4 text-body text-neutral-700 dark:text-neutral-300">
+                    <td className="px-6 py-4 text-body text-neutral-700 dark:text-neutral-300 tabular-nums">
                       {formatDate(varaka.tarih)}
                     </td>
                     <td className="px-6 py-4 text-body text-neutral-900 dark:text-neutral-200 font-medium">
@@ -240,7 +241,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
                       {varaka.isim}
                     </td>
                     <td className="px-6 py-4">
-                      <div className="text-body text-neutral-900 dark:text-neutral-200">
+                      <div className="text-body text-neutral-900 dark:text-neutral-200 text-pretty">
                         {varaka.kabahat.length > 40 ? 
                           varaka.kabahat.substring(0, 40) + '...' : 
                           varaka.kabahat
@@ -258,6 +259,7 @@ const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className 
               </tbody>
             </table>
           </div>
+
 
           {/* Tablo Alt Bilgisi */}
           <div className="px-8 py-4 bg-neutral-50 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700">

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TrendingUp, AlertTriangle, FileText, Hash, BarChart3, ArrowUpRight, ArrowDownRight, Layers, Coins } from 'lucide-react';
+import { cn } from '../lib/utils';
 
 interface StatCardProps {
   title: string;
@@ -38,7 +39,7 @@ const TrendBadge: React.FC<{ change: number | undefined; label: string; invertTr
   return (
     <div className="flex flex-wrap items-center gap-1 mt-2">
       <span className={`inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[11px] font-semibold ${colorClass}`}>
-        {Icon && <Icon className="w-3 h-3" />}
+        {Icon && <Icon className="size-3" aria-hidden="true" />}
         {isZero ? 'Değişim yok' : `${isPositive ? '+' : ''}${change.toFixed(1)}%`}
       </span>
       <span className="text-[10px] text-neutral-500 dark:text-neutral-400 font-normal">
@@ -59,20 +60,24 @@ const StatCard: React.FC<StatCardProps> = ({
   invertTrend = false 
 }) => {
   return (
-    <div className={`bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200/80 dark:border-neutral-800/80 p-6 shadow-sm transition-all duration-300 hover:shadow-xl hover:-translate-y-1 ${className}`}>
+    <div className={cn(
+      "bg-white dark:bg-neutral-900 rounded-2xl border border-slate-200/80 dark:border-neutral-800/80 p-6 shadow-sm",
+      "transition-transform duration-150 ease-out hover:-translate-y-0.5",
+      className
+    )}>
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-3">
             <div className="p-2 rounded-xl bg-slate-50 dark:bg-neutral-800/80">
               {icon}
             </div>
-            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase tracking-wider truncate">{title}</span>
+            <span className="text-xs font-semibold text-slate-500 dark:text-neutral-400 uppercase truncate">{title}</span>
           </div>
-          <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-neutral-100 mb-1 truncate tracking-tight tabular-nums">
+          <div className="text-2xl lg:text-3xl font-extrabold text-slate-900 dark:text-neutral-100 mb-1 truncate tabular-nums">
             {value}
           </div>
           {subtitle && (
-            <div className="text-xs text-slate-500 dark:text-neutral-500 truncate text-ellipsis overflow-hidden font-normal">
+            <div className="text-xs text-slate-500 dark:text-neutral-500 truncate text-ellipsis overflow-hidden font-normal text-pretty">
               {subtitle}
             </div>
           )}
@@ -84,6 +89,7 @@ const StatCard: React.FC<StatCardProps> = ({
     </div>
   );
 };
+
 
 
 interface StatsSectionProps {
@@ -132,7 +138,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Toplam Ceza Sayısı',
       value: metrics.totalCount.toLocaleString('tr-TR'),
       subtitle: 'Kayıtlı toplam varaka',
-      icon: <FileText className="w-5 h-5 text-indigo-500" />,
+      icon: <FileText className="size-5 text-indigo-500" aria-hidden="true" />,
       change: changes.totalCount,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // Ceza sayısı artışı kötüdür (kırmızı)
@@ -142,7 +148,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Toplam Ceza Tutarı',
       value: formatCurrency(metrics.totalAmount),
       subtitle: 'Cezaların toplamı',
-      icon: <TrendingUp className="w-5 h-5 text-amber-500" />,
+      icon: <TrendingUp className="size-5 text-amber-500" aria-hidden="true" />,
       change: changes.totalAmount,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // Ceza tutarı artışı kötüdür (kırmızı)
@@ -152,7 +158,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Ortalama Ceza Tutarı',
       value: formatCurrency(metrics.averageAmount),
       subtitle: 'Varaka başına ortalama ceza',
-      icon: <Coins className="w-5 h-5 text-yellow-500" />,
+      icon: <Coins className="size-5 text-yellow-500" aria-hidden="true" />,
       change: changes.averageAmount,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // Ortalama ceza artışı kötüdür (kırmızı)
@@ -165,7 +171,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Benzersiz Araç Sayısı',
       value: metrics.uniqueVehiclesCount.toLocaleString('tr-TR'),
       subtitle: 'Ceza alan farklı araçlar',
-      icon: <Hash className="w-5 h-5 text-blue-500" />,
+      icon: <Hash className="size-5 text-blue-500" aria-hidden="true" />,
       change: changes.uniqueVehiclesCount,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // Araç sayısı artışı kötüdür (kırmızı)
@@ -175,7 +181,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Mükerrer İhlal Oranı',
       value: `%${metrics.repeatOffenderRate.toFixed(1)}`,
       subtitle: 'Birden fazla ceza alanlar',
-      icon: <AlertTriangle className="w-5 h-5 text-rose-500" />,
+      icon: <AlertTriangle className="size-5 text-rose-500" aria-hidden="true" />,
       change: changes.repeatOffenderRate,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // Mükerrer oranı artışı kötüdür (kırmızı)
@@ -185,7 +191,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Men Cezası Oranı',
       value: `%${metrics.menPenaltyRate.toFixed(1)}`,
       subtitle: 'Men edilen araçların oranı',
-      icon: <BarChart3 className="w-5 h-5 text-emerald-500" />,
+      icon: <BarChart3 className="size-5 text-emerald-500" aria-hidden="true" />,
       change: changes.menPenaltyRate,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: false, // Men cezası oranı artışı yeşildir
@@ -195,7 +201,7 @@ const StatsSection: React.FC<StatsSectionProps> = ({
       title: 'Farklı Kabahat Türü',
       value: metrics.kabahatTuruSayisi.toLocaleString('tr-TR'),
       subtitle: 'Benzersiz ihlal kategorileri',
-      icon: <Layers className="w-5 h-5 text-sky-500" />,
+      icon: <Layers className="size-5 text-sky-500" aria-hidden="true" />,
       change: changes.kabahatTuruSayisi,
       comparisonLabel: selectedPeriodLabel,
       invertTrend: true, // İhlal çeşitliliği artışı kötüdür (kırmızı)
@@ -235,13 +241,14 @@ const StatsSection: React.FC<StatsSectionProps> = ({
         {enYayginKabahat && enYayginKabahatSayisi && (
           <div className="mt-8 text-center">
             <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/20 px-6 py-3 rounded-full border border-indigo-200 dark:border-indigo-800">
-              <AlertTriangle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-              <span className="text-indigo-900 dark:text-indigo-100 font-medium">
+              <AlertTriangle className="size-5 text-indigo-600 dark:text-indigo-400" aria-hidden="true" />
+              <span className="text-indigo-900 dark:text-indigo-100 font-medium text-balance">
                 En yaygın kabahat: <span className="font-bold">{enYayginKabahat}</span> ({enYayginKabahatSayisi.toLocaleString('tr-TR')} adet)
               </span>
             </div>
           </div>
         )}
+
       </div>
     </section>
   );

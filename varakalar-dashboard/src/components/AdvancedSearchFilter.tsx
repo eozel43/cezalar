@@ -43,10 +43,10 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
       <div className="mx-auto max-w-7xl px-6">
         {/* Section Header */}
         <div className="mb-8">
-          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2">
+          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2 text-balance">
             🔍 Gelişmiş Arama & Filtreleme
           </h2>
-          <p className="text-body text-neutral-600 dark:text-neutral-400">
+          <p className="text-body text-neutral-600 dark:text-neutral-400 text-pretty">
             Verilerinizi detaylı şekilde filtreleyin ve analiz edin
           </p>
         </div>
@@ -58,34 +58,36 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
             <div className="space-y-6">
               {/* Plaka Arama */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  <Search className="w-4 h-4" />
+                <label htmlFor="search-input" className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <Search className="size-4" aria-hidden="true" />
                   Plaka / İsim Arama
                 </label>
                 <div className="relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 w-5 h-5" />
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 size-5" aria-hidden="true" />
                   <input
+                    id="search-input"
                     type="text"
                     placeholder="Plaka numarası veya isim ile arama..."
                     value={searchTerm}
                     onChange={(e) => onSearchChange(e.target.value)}
-                    className="w-full h-12 pl-10 pr-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 placeholder:text-neutral-500 transition-all duration-200"
+                    className="w-full h-12 pl-10 pr-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 placeholder:text-neutral-500 transition-colors duration-150"
                   />
                 </div>
               </div>
 
               {/* Kabahat Türü Filtre */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  <User className="w-4 h-4" />
+                <label htmlFor="kabahat-select" className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <User className="size-4" aria-hidden="true" />
                   Kabahat Türü
                 </label>
                 <div className="relative">
-                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 w-5 h-5" />
+                  <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-500 dark:text-neutral-500 size-5" aria-hidden="true" />
                   <select
+                    id="kabahat-select"
                     value={kabahatFilter}
                     onChange={(e) => onKabahatFilterChange(e.target.value)}
-                    className="w-full h-12 pl-10 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-all duration-200"
+                    className="w-full h-12 pl-10 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-colors duration-150"
                   >
                     <option value="">Tüm kabahat türleri</option>
                     {kabahatList.map((kabahat) => (
@@ -95,7 +97,7 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
                     ))}
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="size-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -107,22 +109,23 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
             <div className="space-y-6">
               {/* Ceza Türü Filtre */}
               <div>
-                <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                  <DollarSign className="w-4 h-4" />
+                <label htmlFor="ceza-turu-select" className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
+                  <DollarSign className="size-4" aria-hidden="true" />
                   Ceza Türü
                 </label>
                 <div className="relative">
                   <select
+                    id="ceza-turu-select"
                     value={cezaTuruFilter}
                     onChange={(e) => onCezaTuruFilterChange(e.target.value)}
-                    className="w-full h-12 pl-4 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-all duration-200"
+                    className="w-full h-12 pl-4 pr-10 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 appearance-none transition-colors duration-150"
                   >
                     <option value="">Tüm ceza türleri</option>
                     <option value="para">Para Cezası</option>
                     <option value="men">Men Cezası</option>
                   </select>
                   <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                    <svg className="w-5 h-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="size-5 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </div>
@@ -132,20 +135,22 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
               {/* Men Cezaları Toggle */}
               <div className="flex items-center justify-between p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg border border-neutral-200 dark:border-neutral-700">
                 <div className="flex items-center gap-2">
-                  <Ban className="w-5 h-5 text-semantic-warning" />
+                  <Ban className="size-5 text-semantic-warning" aria-hidden="true" />
                   <div>
                     <div className="text-body-sm font-medium text-neutral-900 dark:text-neutral-200">Sadece Men Cezaları</div>
                     <div className="text-body-sm text-neutral-600 dark:text-neutral-400">Men cezalarını özel olarak göster</div>
                   </div>
                 </div>
-                <label className="relative inline-flex items-center cursor-pointer">
+                <label className="relative inline-flex items-center cursor-pointer" htmlFor="men-cezasi-checkbox">
                   <input
+                    id="men-cezasi-checkbox"
                     type="checkbox"
                     checked={showMenCezalari}
                     onChange={(e) => onShowMenCezalariChange(e.target.checked)}
                     className="sr-only peer"
+                    aria-label="Sadece men cezalarını göster"
                   />
-                  <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary-600"></div>
+                  <div className="w-11 h-6 bg-neutral-200 dark:bg-neutral-700 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary-300 dark:peer-focus:ring-primary-900 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-neutral-300 after:border after:rounded-full after:size-5 after:transition-all peer-checked:bg-primary-600"></div>
                 </label>
               </div>
             </div>
@@ -153,29 +158,34 @@ const AdvancedSearchFilter: React.FC<AdvancedSearchFilterProps> = ({
 
           {/* Date Range */}
           <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
-            <label className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
-              <Calendar className="w-4 h-4" />
+            <span className="flex items-center gap-2 text-body-sm font-medium text-neutral-700 dark:text-neutral-300 mb-3">
+              <Calendar className="size-4" aria-hidden="true" />
               Tarih Aralığı (İsteğe Bağlı)
-            </label>
+            </span>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
+                <label htmlFor="date-start" className="sr-only">Başlangıç Tarihi</label>
                 <input
+                  id="date-start"
                   type="date"
                   value={dateRange.start}
                   onChange={(e) => onDateRangeChange(e.target.value, dateRange.end)}
-                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-all duration-200"
+                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-colors duration-150"
                 />
               </div>
               <div>
+                <label htmlFor="date-end" className="sr-only">Bitiş Tarihi</label>
                 <input
+                  id="date-end"
                   type="date"
                   value={dateRange.end}
                   onChange={(e) => onDateRangeChange(dateRange.start, e.target.value)}
-                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-all duration-200"
+                  className="w-full h-12 px-4 bg-white dark:bg-neutral-800 border border-neutral-200 dark:border-neutral-700 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 text-body dark:text-neutral-200 transition-colors duration-150"
                 />
               </div>
             </div>
           </div>
+
 
           {/* Results Summary */}
           <div className="mt-6 pt-6 border-t border-neutral-200 dark:border-neutral-700">
