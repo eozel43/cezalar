@@ -28,7 +28,6 @@
     --border: 240 5.9% 90%;
     --input: 240 5.9% 90%;
     --ring: 240 5.9% 10%;
-    --background-page: #FAFAFA;
   }
 
   .dark {
@@ -51,7 +50,6 @@
     --border: 240 3.7% 15.9%;
     --input: 240 3.7% 15.9%;
     --ring: 240 4.9% 83.9%;
-    --background-page: #121212;
   }
 }
 
@@ -59,187 +57,87 @@
   * {
     @apply border-border;
   }
-  
+
   body {
-    @apply bg-[var(--background-page)] text-neutral-900 dark:text-neutral-200 font-sans;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11", "tnum";
-    font-variant-numeric: tabular-nums;
+    @apply bg-background-page text-neutral-800 font-sans antialiased;
+    font-feature-settings: "rlig" 1, "calt" 1, "cv11" 1;
   }
 
-  .tabular-nums {
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum";
-  }
-
-  
-  html {
-    scroll-behavior: smooth;
-  }
-  
-  /* Custom scrollbar */
   ::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
-  
+
   ::-webkit-scrollbar-track {
-    @apply bg-neutral-100;
+    @apply bg-transparent;
   }
-  
+
   ::-webkit-scrollbar-thumb {
     @apply bg-neutral-300 rounded-full;
   }
-  
+
   ::-webkit-scrollbar-thumb:hover {
     @apply bg-neutral-400;
   }
-}
 
-/* Animation utilities */
-@layer utilities {
-  .scale-102 {
-    transform: scale(1.02);
+  ::selection {
+    @apply bg-primary-100 text-primary-900;
   }
-  
-  /* Accessibility: Reduce motion for users who prefer it */
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation-duration: 0.01ms !important;
-      animation-iteration-count: 1 !important;
-      transition-duration: 0.01ms !important;
-      scroll-behavior: auto !important;
-    }
+
+  /* Keyboard focus indicator (mouse clicks do not show it) */
+  :focus-visible {
+    outline: 2px solid #4F78A6;
+    outline-offset: 2px;
   }
 }
 
-/* Component-specific styles */
-.chart-container {
-  @apply relative;
-}
-
-.chart-container canvas {
-  @apply w-full h-full;
-}
-
-/* Focus styles for better accessibility */
-.focus-visible {
-  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
-}
-
-/* Selection styles */
-::selection {
-  @apply bg-primary-100 text-primary-900;
-}
-
-img {
-  object-position: top;
-}
-
-.fixed {
-  position: fixed;
-}
-
-/* Mobile-first responsive enhancements */
-@media (max-width: 767px) {
-  .mobile-stack {
-    @apply flex-col space-y-4;
-  }
-  
-  .mobile-padding {
-    @apply px-4;
-  }
-  
-  .mobile-text-scale {
-    font-size: 0.875rem; /* body-sm equivalent */
-  }
-  
-  /* Reduce spacing on mobile */
-  .mobile-reduced-spacing {
-    padding-top: 2.5rem; /* 40px instead of 64px */
-    padding-bottom: 2.5rem;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
   }
 }
 
-/* Enhanced hover effects for cards */
-.stat-card-hover {
-  transition: all 250ms ease-out;
-}
-
-.stat-card-hover:hover {
-  transform: translateY(-4px) scale(1.02);
-  box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1), 0 4px 6px rgba(0, 0, 0, 0.05);
-}
-
-/* Table responsive improvements */
-@media (max-width: 768px) {
-  .table-container {
-    @apply overflow-x-auto;
-    min-width: 320px;
-  }
-  
-  .table-container table {
-    @apply min-w-full;
-  }
-}
-
-/* Chart container improvements */
-.chart-responsive {
-  position: relative;
-  height: 300px;
-  width: 100%;
-}
-
-@media (max-width: 768px) {
-  .chart-responsive {
-    height: 250px;
-  }
-}
-
-/* Loading animation improvements */
-.loading-pulse {
-  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: .5;
-  }
-}
-
-/* Smooth transitions for all interactive elements */
-.transition-smooth {
-  transition: all 250ms ease-out;
-}
-
-/* Better focus indicators */
-input:focus,
-select:focus,
-button:focus {
-  outline: 2px solid #0066FF;
-  outline-offset: 2px;
-}
-
-/* Ensure minimum touch targets on mobile */
-@media (max-width: 768px) {
-  button,
-  input,
-  select {
-    min-height: 44px;
-  }
-}
-
-/* Print styles */
+/* Print / PDF report */
 @media print {
+  @page {
+    size: A4 landscape;
+    margin: 12mm;
+  }
+
+  body {
+    background: #fff !important;
+    font-size: 11px;
+  }
+
   .no-print {
     display: none !important;
   }
-  
-  .print-break {
-    page-break-after: always;
+
+  .lg\:pl-60 {
+    padding-left: 0 !important;
+  }
+
+  main {
+    padding: 0 !important;
+  }
+
+  table {
+    font-size: 10px;
+  }
+
+  tr {
+    break-inside: avoid;
+  }
+
+  thead {
+    display: table-header-group;
+  }
+
+  .shadow-sm {
+    box-shadow: none !important;
   }
 }

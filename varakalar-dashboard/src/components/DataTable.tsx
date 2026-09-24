@@ -1,285 +1,211 @@
-import React, { useState, useMemo } from 'react';
-import { ChevronUp, ChevronDown, Ban, DollarSign } from 'lucide-react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { ChevronUp, ChevronDown, ChevronsUpDown, ChevronLeft, ChevronRight, FileSpreadsheet, Printer } from 'lucide-react';
+import { toast } from 'sonner';
 import { Varaka, SortConfig } from '../types';
+import { formatCurrency, formatDate, formatNumber, toIsoDate } from '../lib/format';
+import { isMenCezasi } from '../lib/stats';
+import { Card, CardHeader, Button, EmptyState } from './ui';
+import { cn } from '../lib/utils';
 
-interface DataTableProps {
-  data: Varaka[];
-  showMenCezalari: boolean;
-  className?: string;
-}
+const PAGE_SIZES = [25, 50, 100];
 
-const DataTable: React.FC<DataTableProps> = ({ data, showMenCezalari, className = '' }) => {
-  const [sortConfig, setSortConfig] = useState<SortConfig | null>(null);
+const COLUMNS: { key: keyof Varaka; label: string; align?: 'right' }[] = [
+  { key: 'sira_no', label: 'Sıra' },
+  { key: 'tarih', label: 'Tarih' },
+  { key: 'plaka_no', label: 'Plaka' },
+  { key: 'isim', label: 'Ad Soyad' },
+  { key: 'kabahat', label: 'Kabahat' },
+  { key: 'ceza_miktari', label: 'Ceza', align: 'right' },
+];
 
-  // Sıralama işlemi
+const exportToExcel = async (rows: Varaka[]) => {
+  const XLSX = await import('xlsx');
+  const sheet = XLSX.utils.json_to_sheet(
+    rows.map(v => ({
+      'Sıra No': v.sira_no,
+      Tarih: formatDate(v.tarih),
+      Gün: v.gun,
+      'Plaka No': v.plaka_no,
+      'Ad Soyad': v.isim,
+      Kabahat: v.kabahat,
+      'Ceza Türü': isMenCezasi(v) ? 'Men' : 'Para',
+      'Ceza Tutarı (TL)': v.ceza_miktari,
+      Açıklama: v.ceza_detay || '',
+    }))
+  );
+  sheet['!cols'] = [6, 11, 10, 12, 24, 44, 10, 14, 24].map(wch => ({ wch }));
+  const book = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(book, sheet, 'Varakalar');
+  XLSX.writeFile(book, `varakalar_${toIsoDate(new Date())}.xlsx`);
+};
+
+const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
+  const [sortConfig, setSortConfig] = useState<SortConfig | null>({ key: 'tarih', direction: 'desc' });
+  const [pageSize, setPageSize] = useState(25);
+  const [page, setPage] = useState(0);
+  const [printing, setPrinting] = useState(false);
+
   const sortedData = useMemo(() => {
     if (!sortConfig) return data;
-
+    const { key, direction } = sortConfig;
+    const dir = direction === 'asc' ? 1 : -1;
     return [...data].sort((a, b) => {
-      const aValue = a[sortConfig.key];
-      const bValue = b[sortConfig.key];
-
-      if (aValue < bValue) {
-        return sortConfig.direction === 'asc' ? -1 : 1;
-      }
-      if (aValue > bValue) {
-        return sortConfig.direction === 'asc' ? 1 : -1;
-      }
-      return 0;
+      const av = a[key] ?? '';
+      const bv = b[key] ?? '';
+      if (typeof av === 'number' && typeof bv === 'number') return (av - bv) * dir;
+      return String(av).localeCompare(String(bv), 'tr-TR') * dir;
     });
   }, [data, sortConfig]);
 
-  // Sıralama işleyicisi
-  const handleSort = (key: keyof Varaka) => {
-    setSortConfig((current) => {
-      if (current?.key === key) {
-        return {
-          key,
-          direction: current.direction === 'asc' ? 'desc' : 'asc',
-        };
-      }
-      return { key, direction: 'asc' };
-    });
-  };
+  // Filters changed: go back to the first page
+  useEffect(() => setPage(0), [data, pageSize]);
 
-  // Sıralama ikonu bileşeni
-  const SortIcon: React.FC<{ column: keyof Varaka }> = ({ column }) => {
-    if (sortConfig?.key !== column) {
-      return <div className="size-4" aria-hidden="true" />;
-    }
-
-    return sortConfig.direction === 'asc' ? (
-      <ChevronUp className="size-4 text-neutral-500" aria-hidden="true" />
-    ) : (
-      <ChevronDown className="size-4 text-neutral-500" aria-hidden="true" />
-    );
-  };
-
-  // Para formatı
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('tr-TR', {
-      style: 'currency',
-      currency: 'TRY',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
-
-  // Tarih formatı
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('tr-TR');
-  };
-
-  // Ceza türü badge'i
-  const CezaTuruBadge: React.FC<{ varaka: Varaka }> = ({ varaka }) => {
-    if (varaka.ceza_turu === 'men') {
-      return (
-        <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-warning/10 text-semantic-warning dark:bg-amber-900/20 dark:text-amber-400">
-          <Ban className="size-3" aria-hidden="true" />
-          {varaka.ceza_detay || 'Men Cezası'}
-        </span>
-      );
-    }
-    return (
-      <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-body-sm font-medium bg-semantic-success/10 text-semantic-success dark:bg-emerald-900/20 dark:text-emerald-400 tabular-nums">
-        <DollarSign className="size-3" aria-hidden="true" />
-        {formatCurrency(varaka.ceza_miktari)}
-      </span>
-    );
-  };
-
-
-  // Stats hesaplama
-  const stats = useMemo(() => {
-    const paraCezalari = sortedData.filter(v => v.ceza_turu !== 'men');
-    const menCezalari = sortedData.filter(v => v.ceza_turu === 'men');
-    const toplamParaCezasi = paraCezalari.reduce((sum, v) => sum + v.ceza_miktari, 0);
-
-    return {
-      paraCezalari: paraCezalari.length,
-      menCezalari: menCezalari.length,
-      toplamParaCezasi,
-      toplamKayit: sortedData.length,
+  // Print every row, not just the current page
+  useEffect(() => {
+    if (!printing) return undefined;
+    const done = () => setPrinting(false);
+    window.addEventListener('afterprint', done);
+    const id = requestAnimationFrame(() => window.print());
+    return () => {
+      cancelAnimationFrame(id);
+      window.removeEventListener('afterprint', done);
     };
-  }, [sortedData]);
+  }, [printing]);
 
-  // Son güncelleme tarihi hesaplama (En yeni created_at değeri)
-  const sonGuncellemeTarihi = useMemo(() => {
-    if (!data || data.length === 0) return new Date().toLocaleDateString('tr-TR');
-    
-    const validDates = data
-      .map(v => v.created_at ? new Date(v.created_at) : null)
-      .filter((d): d is Date => d !== null && !isNaN(d.getTime()));
-      
-    if (validDates.length === 0) {
-      return new Date().toLocaleDateString('tr-TR');
+  const pageCount = Math.max(1, Math.ceil(sortedData.length / pageSize));
+  const visible = printing ? sortedData : sortedData.slice(page * pageSize, (page + 1) * pageSize);
+  const toplamTutar = useMemo(() => data.reduce((s, v) => s + v.ceza_miktari, 0), [data]);
+
+  const handleSort = (key: keyof Varaka) =>
+    setSortConfig(current =>
+      current?.key === key ? { key, direction: current.direction === 'asc' ? 'desc' : 'asc' } : { key, direction: 'asc' }
+    );
+
+  const handleExport = async () => {
+    try {
+      await exportToExcel(sortedData);
+      toast.success(`${formatNumber(sortedData.length)} kayıt Excel dosyasına aktarıldı`);
+    } catch {
+      toast.error('Excel dosyası oluşturulamadı');
     }
-    
-    const latestDate = new Date(Math.max(...validDates.map(d => d.getTime())));
-    return latestDate.toLocaleDateString('tr-TR', {
-      day: 'numeric',
-      month: 'long',
-      year: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  }, [data]);
+  };
 
   return (
-    <section className={`py-16 ${className}`}>
-      <div className="mx-auto max-w-7xl px-6">
-        <div className="mb-8">
-          <h2 className="text-heading-lg font-semibold text-neutral-900 dark:text-neutral-200 mb-2 text-balance">
-            📋 Varaka Detay Listesi
-          </h2>
-          <p className="text-body text-neutral-600 dark:text-neutral-400 text-pretty">
-            Tüm ceza kayıtlarını detaylı olarak görüntüle
-          </p>
-        </div>
+    <Card>
+      <CardHeader
+        title="Varaka Kayıtları"
+        description={`${formatNumber(data.length)} kayıt · Toplam ${formatCurrency(toplamTutar)}`}
+        actions={
+          <>
+            <Button size="sm" onClick={handleExport} disabled={!data.length}>
+              <FileSpreadsheet className="w-4 h-4" />
+              Excel
+            </Button>
+            <Button size="sm" onClick={() => setPrinting(true)} disabled={!data.length}>
+              <Printer className="w-4 h-4" />
+              Yazdır / PDF
+            </Button>
+          </>
+        }
+      />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
-          <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 p-4 text-center">
-            <div className="text-xl font-bold text-neutral-900 dark:text-neutral-200 tabular-nums">{stats.toplamKayit.toLocaleString('tr-TR')}</div>
-            <div className="text-body-sm text-neutral-600 dark:text-neutral-400">Toplam Kayıt</div>
-          </div>
-          <div className="bg-semantic-success/10 dark:bg-emerald-900/10 rounded-lg border border-semantic-success/20 dark:border-emerald-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-semantic-success dark:text-emerald-400 tabular-nums">{stats.paraCezalari.toLocaleString('tr-TR')}</div>
-            <div className="text-body-sm text-semantic-success/80 dark:text-emerald-500/80">Para Cezası</div>
-          </div>
-          <div className="bg-semantic-warning/10 dark:bg-amber-900/10 rounded-lg border border-semantic-warning/20 dark:border-amber-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-semantic-warning dark:text-amber-400 tabular-nums">{stats.menCezalari.toLocaleString('tr-TR')}</div>
-            <div className="text-body-sm text-semantic-warning/80 dark:text-amber-500/80">Men Cezası</div>
-          </div>
-          <div className="bg-primary-50 dark:bg-primary-900/10 rounded-lg border border-primary-200 dark:border-primary-800/30 p-4 text-center">
-            <div className="text-xl font-bold text-primary-700 dark:text-primary-400 tabular-nums">{formatCurrency(stats.toplamParaCezasi)}</div>
-            <div className="text-body-sm text-primary-600 dark:text-primary-500">Toplam Tutar</div>
-          </div>
-        </div>
-
-        <div className="bg-white dark:bg-neutral-900 rounded-lg border border-neutral-200 dark:border-neutral-800 shadow-sm overflow-hidden">
-          {/* Tablo Container'ı */}
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              {/* Tablo Header'ı */}
-              <thead className="bg-neutral-50 dark:bg-neutral-800/50 border-b border-neutral-200 dark:border-neutral-700">
-                <tr>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('sira_no')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Sıra No
-                      <SortIcon column="sira_no" />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('tarih')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Tarih
-                      <SortIcon column="tarih" />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('plaka_no')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Plaka No
-                      <SortIcon column="plaka_no" />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('isim')}
-                  >
-                    <div className="flex items-center gap-2">
-                      İsim
-                      <SortIcon column="isim" />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('kabahat')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Kabahat Türü
-                      <SortIcon column="kabahat" />
-                    </div>
-                  </th>
-                  <th 
-                    className="px-6 py-4 text-left text-body-sm font-semibold text-neutral-900 dark:text-neutral-200 cursor-pointer hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors duration-150"
-                    onClick={() => handleSort('ceza_miktari')}
-                  >
-                    <div className="flex items-center gap-2">
-                      Ceza Miktarı
-                      <SortIcon column="ceza_miktari" />
-                    </div>
-                  </th>
+      {data.length === 0 ? (
+        <EmptyState title="Seçili filtrelerle kayıt bulunamadı" description="Filtreleri değiştirerek tekrar deneyin." />
+      ) : (
+        <div className="overflow-auto max-h-[calc(100vh-260px)] min-h-[300px] print:max-h-none print:overflow-visible">
+          <table className="w-full text-body">
+            <thead className="sticky top-0 z-10 bg-neutral-50 print:static">
+              <tr className="border-b border-neutral-200">
+                {COLUMNS.map(col => {
+                  const active = sortConfig?.key === col.key;
+                  const Icon = !active ? ChevronsUpDown : sortConfig.direction === 'asc' ? ChevronUp : ChevronDown;
+                  return (
+                    <th
+                      key={col.key}
+                      scope="col"
+                      aria-sort={active ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : 'none'}
+                      className={cn(
+                        'px-4 py-2.5 text-caption font-semibold uppercase tracking-wide text-neutral-600 whitespace-nowrap',
+                        col.align === 'right' ? 'text-right' : 'text-left'
+                      )}
+                    >
+                      <button
+                        onClick={() => handleSort(col.key)}
+                        className={cn('inline-flex items-center gap-1 hover:text-neutral-900', col.align === 'right' && 'flex-row-reverse')}
+                      >
+                        {col.label}
+                        <Icon className={cn('w-3.5 h-3.5 no-print', active ? 'text-neutral-700' : 'text-neutral-300')} />
+                      </button>
+                    </th>
+                  );
+                })}
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((v, i) => (
+                <tr key={v.id ?? `${v.sira_no}-${i}`} className="border-b border-neutral-100 even:bg-neutral-50/60 hover:bg-primary-50/50">
+                  <td className="px-4 py-2 text-neutral-500 tabular-nums">{v.sira_no}</td>
+                  <td className="px-4 py-2 whitespace-nowrap tabular-nums">
+                    {formatDate(v.tarih)}
+                    <span className="block text-caption text-neutral-500">{v.gun}</span>
+                  </td>
+                  <td className="px-4 py-2 font-medium text-neutral-900 whitespace-nowrap">{v.plaka_no}</td>
+                  <td className="px-4 py-2 text-neutral-700 whitespace-nowrap">{v.isim}</td>
+                  <td className="px-4 py-2 text-neutral-700 max-w-[360px]">
+                    <span className="block truncate print:whitespace-normal" title={v.kabahat}>
+                      {v.kabahat}
+                    </span>
+                  </td>
+                  <td className="px-4 py-2 text-right whitespace-nowrap tabular-nums">
+                    {isMenCezasi(v) ? (
+                      <span
+                        className="inline-block px-2 py-0.5 rounded border border-amber-200 bg-amber-50 text-caption font-medium text-semantic-warning"
+                        title={v.ceza_detay || 'Men cezası'}
+                      >
+                        {v.ceza_detay || 'Men cezası'}
+                      </span>
+                    ) : (
+                      formatCurrency(v.ceza_miktari)
+                    )}
+                  </td>
                 </tr>
-              </thead>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
-              {/* Tablo Body'si */}
-              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
-                {sortedData.map((varaka, index) => (
-                  <tr 
-                    key={`${varaka.sira_no}-${index}`}
-                    className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors duration-150"
-                  >
-                    <td className="px-6 py-4 text-body text-neutral-900 dark:text-neutral-200 font-medium tabular-nums">
-                      {varaka.sira_no}
-                    </td>
-                    <td className="px-6 py-4 text-body text-neutral-700 dark:text-neutral-300 tabular-nums">
-                      {formatDate(varaka.tarih)}
-                    </td>
-                    <td className="px-6 py-4 text-body text-neutral-900 dark:text-neutral-200 font-medium">
-                      {varaka.plaka_no}
-                    </td>
-                    <td className="px-6 py-4 text-body text-neutral-700 dark:text-neutral-300">
-                      {varaka.isim}
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="text-body text-neutral-900 dark:text-neutral-200 text-pretty">
-                        {varaka.kabahat.length > 40 ? 
-                          varaka.kabahat.substring(0, 40) + '...' : 
-                          varaka.kabahat
-                        }
-                      </div>
-                      <div className="text-body-sm text-neutral-500 dark:text-neutral-500 mt-1">
-                        {varaka.gun} • {varaka.mevsim}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <CezaTuruBadge varaka={varaka} />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      {data.length > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-3 px-5 py-3 border-t border-neutral-200 text-body-sm text-neutral-600 no-print">
+          <div className="flex items-center gap-2">
+            <label htmlFor="page-size">Sayfa başına</label>
+            <select
+              id="page-size"
+              value={pageSize}
+              onChange={e => setPageSize(Number(e.target.value))}
+              className="h-8 px-2 border border-neutral-300 rounded-md bg-white"
+            >
+              {PAGE_SIZES.map(s => (
+                <option key={s} value={s}>{s}</option>
+              ))}
+            </select>
           </div>
-
-
-          {/* Tablo Alt Bilgisi */}
-          <div className="px-8 py-4 bg-neutral-50 dark:bg-neutral-800/50 border-t border-neutral-200 dark:border-neutral-700">
-            <div className="flex items-center justify-between">
-              <div className="text-body-sm text-neutral-500 dark:text-neutral-400">
-                Toplam {sortedData.length} kayıt gösteriliyor
-                {showMenCezalari && (
-                  <span className="ml-2 text-semantic-warning font-medium dark:text-amber-400">
-                    (Men cezaları dahil)
-                  </span>
-                )}
-              </div>
-              <div className="text-body-sm text-neutral-500 dark:text-neutral-400">
-                Son güncelleme: {sonGuncellemeTarihi}
-              </div>
+          <div className="flex items-center gap-3">
+            <span className="tabular-nums">
+              {formatNumber(page * pageSize + 1)}–{formatNumber(Math.min((page + 1) * pageSize, sortedData.length))} / {formatNumber(sortedData.length)}
+            </span>
+            <div className="flex gap-1">
+              <Button size="sm" variant="secondary" className="px-2" onClick={() => setPage(p => p - 1)} disabled={page === 0} aria-label="Önceki sayfa">
+                <ChevronLeft className="w-4 h-4" />
+              </Button>
+              <Button size="sm" variant="secondary" className="px-2" onClick={() => setPage(p => p + 1)} disabled={page >= pageCount - 1} aria-label="Sonraki sayfa">
+                <ChevronRight className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      )}
+    </Card>
   );
 };
 

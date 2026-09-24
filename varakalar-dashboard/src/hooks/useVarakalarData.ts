@@ -1,80 +1,70 @@
-import { useState, useEffect } from 'react';
-import { VarakalarData } from '../types';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Varaka } from '../types';
 import { supabase } from '../lib/supabase';
-import { calculateOzet, calculatePareto, calculateTopPlates } from '../lib/calculations';
-import { useAuth } from '../contexts/useAuth';
 
-export const useVarakalarData = () => {
-  const [data, setData] = useState<VarakalarData | null>(null);
+// PostgREST returns at most 1000 rows per request, so fetch in pages
+const PAGE_SIZE = 1000;
+
+const fetchAllVarakalar = async (): Promise<Varaka[]> => {
+  const rows: Varaka[] = [];
+  for (let from = 0; ; from += PAGE_SIZE) {
+    const { data, error } = await supabase
+      .from('varakalar')
+      .select('*')
+      .order('tarih', { ascending: true })
+      .order('sira_no', { ascending: true })
+      .range(from, from + PAGE_SIZE - 1);
+
+    if (error) throw new Error(error.message);
+    rows.push(...((data || []) as Varaka[]));
+    if (!data || data.length < PAGE_SIZE) return rows;
+  }
+};
+
+// Data is only fetched for approved (active) users; RLS enforces the same rule
+export const useVarakalarData = (enabled: boolean) => {
+  const [varakalar, setVarakalar] = useState<Varaka[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { user, profile, loading: authLoading } = useAuth();
+  const reloadTimer = useRef<ReturnType<typeof setTimeout>>();
 
-  const fetchData = async () => {
-    // If authentication session is still loading, wait
-    if (authLoading) return;
-
-    // If there is no authenticated user, reset state and do not query Supabase
-    if (!user) {
-      setData(null);
-      setError(null);
-      setLoading(false);
-      return;
-    }
-
-    // Wait for the user profile to load
-    if (!profile) {
-      return;
-    }
-
-    // If the profile is not active, do not query data and set appropriate error/restricted state
-    if (profile.status !== 'active') {
-      setData(null);
-      setError('Hesabınız henüz onaylanmamış veya kısıtlanmış.');
-      setLoading(false);
-      return;
-    }
-
+  // silent: refresh in the background without showing the loading state
+  const fetchData = useCallback(async (silent = false) => {
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
-
-      // Fetch all varakalar from Supabase
-      const { data: varakalar, error: fetchError } = await supabase
-        .from('varakalar')
-        .select('*')
-        .order('tarih', { ascending: true });
-
-      if (fetchError) {
-        throw new Error(fetchError.message);
-      }
-
-      if (!varakalar || varakalar.length === 0) {
-        throw new Error('Henüz veri yüklenmemiş. Excel dosyası yükleyerek başlayın.');
-      }
-
-      // Calculate statistics
-      const ozet = calculateOzet(varakalar);
-      const pareto_analizi = calculatePareto(varakalar);
-      const top_3_plaka_ceza = calculateTopPlates(varakalar);
-
-      setData({
-        varakalar,
-        ozet,
-        pareto_analizi,
-        top_3_plaka_ceza
-      });
+      setVarakalar(await fetchAllVarakalar());
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Bilinmeyen hata');
     } finally {
-      setLoading(false);
+      if (!silent) setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
+    if (!enabled) {
+      setVarakalar([]);
+      setError(null);
+      setLoading(false);
+      return undefined;
+    }
+
     fetchData();
-  }, [user, profile, authLoading]);
 
-  return { data, loading: loading || authLoading, error, refetch: fetchData };
+    // Batch imports fire many change events; reload once after they settle
+    const subscription = supabase
+      .channel('varakalar_changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'varakalar' }, () => {
+        clearTimeout(reloadTimer.current);
+        reloadTimer.current = setTimeout(() => fetchData(true), 1500);
+      })
+      .subscribe();
+
+    return () => {
+      clearTimeout(reloadTimer.current);
+      subscription.unsubscribe();
+    };
+  }, [enabled, fetchData]);
+
+  return { varakalar, loading, error, refetch: () => fetchData(true) };
 };
-

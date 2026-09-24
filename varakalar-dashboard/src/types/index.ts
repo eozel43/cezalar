@@ -1,5 +1,6 @@
-// Data types for Varakalar Dashboard
+// Data types for the Zabıt Varakası dashboard
 export interface Varaka {
+  id?: string;
   sira_no: number;
   tarih: string;
   gun: string;
@@ -9,8 +10,8 @@ export interface Varaka {
   ceza_miktari: number;
   ay: number;
   mevsim: string;
-  ceza_turu?: string;
-  ceza_detay?: string;
+  ceza_turu?: string | null;
+  ceza_detay?: string | null;
   created_at?: string;
 }
 
@@ -23,36 +24,18 @@ export interface ParetoAnalizi {
 
 export interface TopPlakaCeza {
   plaka: string;
+  isim: string;
   toplam_ceza: number;
   ceza_sayisi: number;
   ortalama_ceza: number;
-}
-
-export interface MenCezasi {
-  sira_no: number;
-  tarih: string;
-  gun: string;
-  plaka_no: string;
-  isim: string;
-  kabahat: string;
-  ceza_miktari: number;
-  ay: number;
-  mevsim: string;
-  ceza_turu: string;
-  ceza_detay: string;
 }
 
 export interface Ozet {
   toplam_sayisi: number;
   toplam_ceza_tutari: number;
   ortalama_ceza: number;
-}
-
-export interface VarakalarData {
-  varakalar: Varaka[];
-  ozet: Ozet;
-  pareto_analizi: ParetoAnalizi[];
-  top_3_plaka_ceza: TopPlakaCeza[];
+  para_cezasi_sayisi: number;
+  men_cezasi_sayisi: number;
 }
 
 export interface SortConfig {
@@ -60,10 +43,22 @@ export interface SortConfig {
   direction: 'asc' | 'desc';
 }
 
-export interface FilterState {
+export type CezaTuruFilter = '' | 'para' | 'men';
+
+export interface Filters {
   searchTerm: string;
-  kabahatFilter: string;
-  cezaTuruFilter: string;
-  tarihBaslangic?: string;
-  tarihBitis?: string;
+  kabahat: string;
+  cezaTuru: CezaTuruFilter;
+  start: string;
+  end: string;
 }
+
+export const EMPTY_FILTERS: Filters = {
+  searchTerm: '',
+  kabahat: '',
+  cezaTuru: '',
+  start: '',
+  end: '',
+};
+
+export type SectionId = 'genel' | 'analiz' | 'kayitlar' | 'aktarim' | 'yonetim';

@@ -1,14 +1,14 @@
 import React, { useState, useRef } from 'react';
 import * as XLSX from 'xlsx';
-import { supabase } from '../lib/supabase';
+import { FileUp, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
+import { supabase, functionErrorMessage } from '../lib/supabase';
+import { formatNumber } from '../lib/format';
+import { Card, CardHeader, Button } from './ui';
+import { cn } from '../lib/utils';
 
 interface ExcelUploadProps {
   onUploadComplete: () => void;
-}
-
-// Flexible interface - will be mapped dynamically
-interface VarakaRow {
-  [key: string]: any;
 }
 
 const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
@@ -28,10 +28,8 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
       
       reader.onload = (e) => {
         try {
-          const result = e.target?.result;
-          if (!result) throw new Error('Dosya içeriği boş');
-          const data = new Uint8Array(result as ArrayBuffer);
-          const workbook = XLSX.read(data, { type: 'array' });
+          const data = e.target?.result;
+          const workbook = XLSX.read(data, { type: 'binary' });
           
           // Try to find "TümVeri" sheet, fallback to first sheet
           let sheetName = workbook.SheetNames.find(name => 
@@ -46,14 +44,10 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
             sheetName = workbook.SheetNames[0];
           }
           
-          console.log('[Excel Parse] Sheet seçildi:', sheetName);
-          console.log('[Excel Parse] Tüm sheet\'ler:', workbook.SheetNames);
           
           const worksheet = workbook.Sheets[sheetName];
           const jsonData = XLSX.utils.sheet_to_json(worksheet);
           
-          console.log('[Excel Parse] Ham veri ilk satır:', jsonData[0]);
-          console.log('[Excel Parse] Toplam satır:', jsonData.length);
           
           if (jsonData.length === 0) {
             throw new Error(`"${sheetName}" sheet'inde veri bulunamadı`);
@@ -68,7 +62,6 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
             columnMap[normalized] = key;
           });
           
-          console.log('[Excel Parse] Kolonlar:', Object.keys(firstRow));
           
           // Helper function to get value by flexible column name
           const getColumnValue = (row: any, possibleNames: string[]): any => {
@@ -125,13 +118,11 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
             };
             
             return record;
-          }).filter(row => row.plaka_no && row.isim && row.kabahat); // Filter invalid rows
+          }).filter(row => row.tarih && row.plaka_no && row.isim && row.kabahat); // Filter invalid rows
 
-          console.log('[Excel Parse] Dönüştürülmüş veri ilk satır:', transformed[0]);
-          console.log('[Excel Parse] Geçerli kayıt sayısı:', transformed.length);
 
           if (transformed.length === 0) {
-            throw new Error('Excel dosyasında geçerli veri bulunamadı. Lütfen Plaka No, İsim ve Kabahat kolonlarının dolu olduğundan emin olun.');
+            throw new Error('Excel dosyasında geçerli veri bulunamadı. Lütfen Tarih, Plaka No, İsim ve Kabahat kolonlarının dolu olduğundan emin olun.');
           }
 
           resolve(transformed);
@@ -142,44 +133,30 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
       };
 
       reader.onerror = () => reject(new Error('Dosya okunamadı'));
-      reader.readAsArrayBuffer(file);
+      reader.readAsBinaryString(file);
     });
   };
 
-  // Convert Excel date serial number to YYYY-MM-DD format
-  const formatExcelDate = (excelDate: any): string => {
+  // Convert an Excel date (serial number, 'GG.AA.YYYY' or ISO text) to YYYY-MM-DD; null if unreadable
+  const formatExcelDate = (excelDate: any): string | null => {
     if (typeof excelDate === 'string') {
-      const str = excelDate.trim();
-      // 1. Check if it's already yyyy-mm-dd
-      if (/^\d{4}-\d{2}-\d{2}$/.test(str)) {
-        return str;
+      const text = excelDate.trim();
+      const tr = text.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+      if (tr) {
+        return `${tr[3]}-${tr[2].padStart(2, '0')}-${tr[1].padStart(2, '0')}`;
       }
-      // 2. Check for dd.mm.yyyy, dd/mm/yyyy or dd-mm-yyyy
-      const match = str.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
-      if (match) {
-        const day = match[1].padStart(2, '0');
-        const month = match[2].padStart(2, '0');
-        const year = match[3];
-        return `${year}-${month}-${day}`;
-      }
-      // 3. Fallback to standard Date constructor
-      const date = new Date(str);
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0];
-      }
-      return str;
+      const iso = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      return iso ? `${iso[1]}-${iso[2]}-${iso[3]}` : null;
     }
-    
-    // Excel serial date number
-    const date = XLSX.SSF.parse_date_code(excelDate);
-    if (date) {
-      const year = date.y;
-      const month = String(date.m).padStart(2, '0');
-      const day = String(date.d).padStart(2, '0');
-      return `${year}-${month}-${day}`;
+
+    if (typeof excelDate === 'number') {
+      const date = XLSX.SSF.parse_date_code(excelDate);
+      if (date) {
+        return `${date.y}-${String(date.m).padStart(2, '0')}-${String(date.d).padStart(2, '0')}`;
+      }
     }
-    
-    return new Date().toISOString().split('T')[0];
+
+    return null;
   };
 
   // Get existing record count
@@ -195,80 +172,39 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
     }
   };
 
-  const handleFileUpload = async (file: File, shouldClearExisting: boolean) => {
-    if (!file) return;
 
+  const handleFileUpload = async (file: File, shouldClearExisting: boolean) => {
     setUploading(true);
     setError('');
-    setProgress('Dosya okunuyor...');
-
-    // Timeout after 60 seconds
-    const timeoutId = setTimeout(() => {
-      setError('İşlem zaman aşımına uğradı. Lütfen tekrar deneyin veya dosya boyutunu kontrol edin.');
-      setUploading(false);
-      setProgress('');
-    }, 60000); // 60 seconds
+    setProgress('Dosya okunuyor…');
 
     try {
-      // Parse Excel file
       const varakalar = await parseExcelFile(file);
-      
-      if (varakalar.length === 0) {
-        clearTimeout(timeoutId);
-        throw new Error('Excel dosyasında geçerli veri bulunamadı');
+      setProgress(`${formatNumber(varakalar.length)} kayıt bulundu, veritabanına aktarılıyor…`);
+
+      const { data, error: importError } = await supabase.functions.invoke('import-varakalar', {
+        body: { varakalar, clearExisting: shouldClearExisting },
+      });
+
+      if (importError) throw new Error(await functionErrorMessage(importError, 'Veritabanına aktarım başarısız oldu'));
+      if (data?.error) throw new Error(data.error.message || 'İçe aktarma hatası');
+
+      const inserted = data?.data?.inserted || 0;
+      const deleted = data?.data?.deleted || 0;
+      const message = shouldClearExisting && deleted > 0
+        ? `${formatNumber(deleted)} eski kayıt silindi, ${formatNumber(inserted)} yeni kayıt eklendi`
+        : `${formatNumber(inserted)} kayıt eklendi`;
+
+      if (data?.data?.errors) {
+        toast.warning(`Aktarım kısmen tamamlandı: ${message}. Bazı kayıtlar eklenemedi.`);
+      } else {
+        toast.success(`Aktarım tamamlandı: ${message}`);
       }
-
-      setProgress(`${varakalar.length} kayıt bulundu, veritabanına aktarılıyor...`);
-
-      // Call edge function to import data with timeout handling
-      const controller = new AbortController();
-      const fetchTimeoutId = setTimeout(() => controller.abort(), 55000); // 55 seconds (before main timeout)
-
-      try {
-        const { data, error: importError } = await supabase.functions.invoke('import-varakalar', {
-          body: {
-            varakalar,
-            clearExisting: shouldClearExisting
-          },
-          signal: controller.signal
-        });
-
-        clearTimeout(fetchTimeoutId);
-        clearTimeout(timeoutId);
-
-        if (importError) {
-          throw new Error(importError.message || 'Veritabanı hatası');
-        }
-
-        if (data?.error) {
-          throw new Error(data.error.message || 'İçe aktarma hatası');
-        }
-
-        // Success message with details
-        const insertedCount = data?.data?.inserted || 0;
-        let successMessage = `Başarılı! ${insertedCount} kayıt eklendi.`;
-        
-        if (shouldClearExisting && existingRecordCount > 0) {
-          successMessage = `Başarılı! ${existingRecordCount} eski kayıt silindi, ${insertedCount} yeni kayıt eklendi.`;
-        }
-
-        setProgress(successMessage);
-        setTimeout(() => {
-          onUploadComplete();
-          setProgress('');
-          setShowConfirmDialog(false);
-        }, 3000);
-      } catch (fetchError: any) {
-        clearTimeout(fetchTimeoutId);
-        clearTimeout(timeoutId);
-        
-        if (fetchError.name === 'AbortError') {
-          throw new Error('İşlem çok uzun sürdü. Lütfen daha küçük bir dosya ile deneyin.');
-        }
-        throw fetchError;
-      }
+      setProgress('');
+      setShowConfirmDialog(false);
+      setPendingFile(null);
+      onUploadComplete();
     } catch (err: any) {
-      clearTimeout(timeoutId);
       console.error('Upload error:', err);
       setError(err instanceof Error ? err.message : 'Yükleme başarısız oldu');
       setProgress('');
@@ -277,49 +213,35 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
     }
   };
 
-  const handleDrop = async (e: React.DragEvent) => {
+  const isExcel = (file: File) => /\.xlsx?$/i.test(file.name);
+
+  const prepareFile = async (file: File) => {
+    if (!isExcel(file)) {
+      setError('Lütfen Excel dosyası (.xlsx veya .xls) seçin');
+      return;
+    }
+    setError('');
+    setExistingRecordCount(await getExistingRecordCount());
+    setPendingFile(file);
+    setShowConfirmDialog(true);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      const file = files[0];
-      if (file.name.endsWith('.xlsx') || file.name.endsWith('.xls')) {
-        // Show confirmation dialog
-        const count = await getExistingRecordCount();
-        setExistingRecordCount(count);
-        setPendingFile(file);
-        setShowConfirmDialog(true);
-      } else {
-        setError('Lütfen Excel dosyası (.xlsx veya .xls) yükleyin');
-      }
-    }
+    const file = e.dataTransfer.files[0];
+    if (file) prepareFile(file);
   };
 
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-
-  const handleDragLeave = () => {
-    setDragging(false);
-  };
-
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      // Show confirmation dialog
-      const count = await getExistingRecordCount();
-      setExistingRecordCount(count);
-      setPendingFile(files[0]);
-      setShowConfirmDialog(true);
-    }
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) prepareFile(file);
+    e.target.value = '';
   };
 
   const confirmUpload = () => {
     if (pendingFile) {
       handleFileUpload(pendingFile, clearExisting);
-      setPendingFile(null);
     }
   };
 
@@ -329,194 +251,111 @@ const ExcelUpload: React.FC<ExcelUploadProps> = ({ onUploadComplete }) => {
     setError('');
   };
 
+  const locked = uploading || showConfirmDialog;
+
   return (
-    <div className="mx-auto max-w-3xl px-6 py-8">
-      <div className="bg-surface rounded-lg p-8 border border-neutral-200 shadow-sm">
-        <div className="text-center mb-6">
-          <h2 className="text-heading-md font-semibold text-neutral-900 mb-2">
-            Excel Dosyası Yükle
-          </h2>
-          <p className="text-body text-neutral-700">
-            Varaka kayıtlarını içeren Excel dosyanızı yükleyin
-          </p>
-        </div>
-
-        {/* Confirmation Dialog */}
-        {showConfirmDialog && !uploading && (
-          <div className="mb-6 p-6 bg-amber-50 border-2 border-amber-200 rounded-lg">
-            <h3 className="text-heading-sm font-semibold text-amber-900 mb-4">
-              Yükleme Seçenekleri
-            </h3>
-            
-            {existingRecordCount > 0 && (
-              <div className="mb-4 p-3 bg-amber-100 rounded">
-                <p className="text-body-sm text-amber-900">
-                  <strong>Uyarı:</strong> Veritabanında {existingRecordCount} kayıt bulunuyor.
-                </p>
-              </div>
-            )}
-
-            <div className="space-y-3 mb-6">
-              <label className="flex items-start space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="clearOption"
-                  checked={clearExisting}
-                  onChange={() => setClearExisting(true)}
-                  className="mt-1 w-4 h-4 text-primary-500"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-neutral-900">
-                    Tüm verileri sil ve yenilerini yükle
-                  </div>
-                  <div className="text-body-sm text-neutral-600">
-                    Mevcut {existingRecordCount} kayıt silinecek, sadece yeni veriler kalacak (Önerilen)
-                  </div>
-                </div>
-              </label>
-
-              <label className="flex items-start space-x-3 cursor-pointer">
-                <input
-                  type="radio"
-                  name="clearOption"
-                  checked={!clearExisting}
-                  onChange={() => setClearExisting(false)}
-                  className="mt-1 w-4 h-4 text-primary-500"
-                />
-                <div className="flex-1">
-                  <div className="font-medium text-neutral-900">
-                    Mevcut verilere ekle
-                  </div>
-                  <div className="text-body-sm text-neutral-600">
-                    Yeni kayıtlar mevcut verilerin üzerine eklenecek (Duplicate olabilir)
-                  </div>
-                </div>
-              </label>
-            </div>
-
-            <div className="flex gap-3">
-              <button
-                onClick={confirmUpload}
-                className="flex-1 px-4 py-2 bg-primary-500 text-white rounded-lg hover:bg-primary-600 transition-colors font-medium"
-              >
-                Devam Et
-              </button>
-              <button
-                onClick={cancelUpload}
-                className="flex-1 px-4 py-2 bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors font-medium"
-              >
-                İptal
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* Drag & Drop Area */}
-        <div
-          onDrop={handleDrop}
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          tabIndex={0}
-          role="button"
-          aria-label="Excel dosyasını sürükleyin veya bilgisayarınızdan seçmek için tıklayın"
-          className={`
-            border-2 border-dashed rounded-lg p-12 text-center transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500
-            ${dragging 
-              ? 'border-primary-500 bg-primary-50' 
-              : 'border-neutral-300 bg-neutral-50 hover:border-primary-400'
-            }
-            ${uploading || showConfirmDialog ? 'opacity-50 pointer-events-none' : 'cursor-pointer'}
-          `}
-          onClick={() => !uploading && !showConfirmDialog && fileInputRef.current?.click()}
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <Card className="xl:col-span-2">
+        <CardHeader title="Excel Dosyası Aktar" description="Zabıt varakası kayıtlarını içeren Excel dosyasını seçin" />
+        <div className="p-5 space-y-4">
+          <div
+            onDrop={handleDrop}
+            onDragOver={e => {
               e.preventDefault();
-              if (!uploading && !showConfirmDialog) {
-                fileInputRef.current?.click();
-              }
-            }
-          }}
-        >
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept=".xlsx,.xls"
-            onChange={handleFileSelect}
-            className="hidden"
-            disabled={uploading || showConfirmDialog}
-          />
-
-          <svg
-            className={`mx-auto h-12 w-12 mb-4 ${dragging ? 'text-primary-500' : 'text-neutral-400'}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
+              setDragging(true);
+            }}
+            onDragLeave={() => setDragging(false)}
+            onClick={() => !locked && fileInputRef.current?.click()}
+            onKeyDown={e => (e.key === 'Enter' || e.key === ' ') && !locked && fileInputRef.current?.click()}
+            role="button"
+            tabIndex={locked ? -1 : 0}
+            aria-disabled={locked}
+            className={cn(
+              'border border-dashed rounded-lg px-6 py-10 text-center transition-colors',
+              dragging ? 'border-primary-500 bg-primary-50' : 'border-neutral-300 bg-neutral-50 hover:border-primary-400',
+              locked ? 'opacity-50 pointer-events-none' : 'cursor-pointer'
+            )}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-            />
-          </svg>
-
-          <p className="text-body font-medium text-neutral-900 mb-2">
-            Dosyayı buraya sürükleyin veya tıklayarak seçin
-          </p>
-          <p className="text-body-sm text-neutral-500">
-            Excel formatı (.xlsx, .xls) desteklenir
-          </p>
-        </div>
-
-        {/* Progress */}
-        {progress && (
-          <div className="mt-6 p-4 bg-primary-50 border border-primary-200 rounded-lg">
-            <div className="flex items-center">
-              {uploading && (
-                <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-primary-500 mr-3"></div>
-              )}
-              {!uploading && (
-                <svg className="h-5 w-5 text-green-600 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                </svg>
-              )}
-              <p className="text-body text-primary-900">{progress}</p>
-            </div>
+            <input ref={fileInputRef} type="file" accept=".xlsx,.xls" onChange={handleFileSelect} className="hidden" disabled={locked} />
+            <FileUp className={cn('mx-auto h-8 w-8 mb-3', dragging ? 'text-primary-600' : 'text-neutral-400')} strokeWidth={1.5} />
+            <p className="text-body font-medium text-neutral-800">Dosyayı sürükleyip bırakın veya seçmek için tıklayın</p>
+            <p className="text-body-sm text-neutral-500 mt-1">.xlsx veya .xls</p>
           </div>
-        )}
 
-        {/* Error */}
-        {error && (
-          <div className="mt-6 p-4 bg-semantic-error/10 border border-semantic-error/30 rounded-lg">
-            <div className="flex items-start">
-              <svg className="h-5 w-5 text-semantic-error mr-2 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p className="text-body text-semantic-error">{error}</p>
+          {showConfirmDialog && !uploading && pendingFile && (
+            <div className="border border-neutral-200 rounded-lg">
+              <div className="px-4 py-3 border-b border-neutral-200 bg-neutral-50">
+                <div className="text-body font-medium text-neutral-900">Aktarım seçenekleri</div>
+                <div className="text-body-sm text-neutral-500 truncate">{pendingFile.name}</div>
+              </div>
+              <div className="p-4 space-y-3">
+                {existingRecordCount > 0 && (
+                  <div className="flex items-start gap-2 px-3 py-2 rounded-md border border-amber-200 bg-amber-50 text-body-sm text-amber-900">
+                    <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+                    Veritabanında şu anda {formatNumber(existingRecordCount)} kayıt bulunuyor.
+                  </div>
+                )}
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="radio" name="clearOption" checked={clearExisting} onChange={() => setClearExisting(true)} className="mt-1 accent-primary-600" />
+                  <span>
+                    <span className="block text-body font-medium text-neutral-900">Mevcut kayıtları değiştir</span>
+                    <span className="block text-body-sm text-neutral-500">
+                      {formatNumber(existingRecordCount)} kayıt silinir, yalnızca dosyadaki kayıtlar kalır (önerilen)
+                    </span>
+                  </span>
+                </label>
+                <label className="flex items-start gap-3 cursor-pointer">
+                  <input type="radio" name="clearOption" checked={!clearExisting} onChange={() => setClearExisting(false)} className="mt-1 accent-primary-600" />
+                  <span>
+                    <span className="block text-body font-medium text-neutral-900">Mevcut kayıtlara ekle</span>
+                    <span className="block text-body-sm text-neutral-500">Aynı kayıtlar dosyada da varsa tekrarlanabilir</span>
+                  </span>
+                </label>
+              </div>
+              <div className="flex justify-end gap-2 px-4 py-3 border-t border-neutral-200">
+                <Button onClick={cancelUpload}>İptal</Button>
+                <Button variant="primary" onClick={confirmUpload}>Aktarımı Başlat</Button>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Info */}
-        <div className="mt-8 p-4 bg-neutral-100 rounded-lg">
-          <h3 className="text-body font-semibold text-neutral-900 mb-2">
-            Excel Formatı
-          </h3>
-          <p className="text-body-sm text-neutral-700 mb-2">
-            Excel dosyanız şu kolonları içermelidir (kolon adları esnek, benzerleri otomatik bulunur):
-          </p>
-          <ul className="text-body-sm text-neutral-600 space-y-1">
-            <li>• <strong>Plaka No</strong> (gerekli) - veya: "Plaka"</li>
-            <li>• <strong>İsim</strong> (gerekli) - veya: "Isim", "Ad"</li>
-            <li>• <strong>Kabahat</strong> (gerekli) - veya: "Suç", "İhlal"</li>
-            <li>• Zabıt Varaka Tarihi (önerilen) - veya: "Tarih", "Date"</li>
-            <li>• Sıra No, Gün, Ceza Miktarı, Ay, Mevsim (opsiyonel)</li>
-          </ul>
-          <p className="text-body-sm text-amber-700 mt-2">
-            💡 Sistem kolonları otomatik bulur, tam eşleşme gerekmez
-          </p>
+          {progress && (
+            <div role="status" className="flex items-center gap-3 px-4 py-3 rounded-md border border-primary-200 bg-primary-50 text-body text-primary-900">
+              {uploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+              {progress}
+            </div>
+          )}
+
+          {error && (
+            <div role="alert" className="flex items-start gap-2 px-4 py-3 rounded-md border border-red-200 bg-red-50 text-body text-semantic-error">
+              <AlertTriangle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              {error}
+            </div>
+          )}
         </div>
-      </div>
+      </Card>
+
+      <Card>
+        <CardHeader title="Dosya Biçimi" />
+        <div className="p-5 text-body-sm text-neutral-700 space-y-3">
+          <p>Kolon adları esnek eşleştirilir; birebir aynı olmaları gerekmez.</p>
+          <dl className="space-y-2">
+            {[
+              ['Zabıt Varaka Tarihi', 'Zorunlu · "Tarih" · GG.AA.YYYY'],
+              ['Plaka No', 'Zorunlu · "Plaka"'],
+              ['İsim', 'Zorunlu · "Ad"'],
+              ['Kabahat', 'Zorunlu · "Suç", "İhlal"'],
+              ['Ceza Miktarı', 'Sayı veya men süresi (ör. "3 gün men")'],
+              ['Sıra No, Gün, Ay, Mevsim', 'İsteğe bağlı'],
+            ].map(([k, v]) => (
+              <div key={k} className="flex flex-col">
+                <dt className="font-medium text-neutral-900">{k}</dt>
+                <dd className="text-neutral-500">{v}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </Card>
     </div>
   );
 };

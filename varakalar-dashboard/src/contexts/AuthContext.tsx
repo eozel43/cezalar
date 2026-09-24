@@ -1,4 +1,4 @@
-import React, { createContext, useEffect, useState, useRef } from 'react';
+import React, { createContext, useEffect, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { User } from '@supabase/supabase-js';
 
@@ -27,7 +27,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const currentUserIdRef = useRef<string | null>(null);
+  const [profileLoading, setProfileLoading] = useState(false);
+  const profileUserId = useRef<string | null>(null);
 
   const fetchUserProfile = async (userId: string) => {
     try {
@@ -65,8 +66,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         setUser(user);
         
         if (user) {
-          currentUserIdRef.current = user.id;
           const profileData = await fetchUserProfile(user.id);
+          profileUserId.current = user.id;
           setProfile(profileData);
         }
       } finally {
@@ -76,24 +77,25 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     
     loadUser();
 
-    // Listen for auth changes
+    // Listen for auth changes - no awaited Supabase calls inside the callback
+    // (it can deadlock the client), so defer the profile fetch
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, session) => {
-        const sessionUserId = session?.user?.id || null;
-        setUser(session?.user || null);
-
-        if (sessionUserId) {
-          if (currentUserIdRef.current !== sessionUserId) {
-            currentUserIdRef.current = sessionUserId;
-            setLoading(true);
-            fetchUserProfile(sessionUserId).then((profileData) => {
-              setProfile(profileData);
-              setLoading(false);
-            });
-          }
-        } else {
-          currentUserIdRef.current = null;
+        const sessionUser = session?.user || null;
+        setUser(sessionUser);
+        if (!sessionUser) {
+          profileUserId.current = null;
           setProfile(null);
+        } else if (event === 'SIGNED_IN' || event === 'USER_UPDATED') {
+          // Only block the UI when the profile belongs to a different (new) user
+          const isNewUser = profileUserId.current !== sessionUser.id;
+          if (isNewUser) setProfileLoading(true);
+          setTimeout(async () => {
+            const profileData = await fetchUserProfile(sessionUser.id);
+            profileUserId.current = sessionUser.id;
+            setProfile(profileData);
+            setProfileLoading(false);
+          }, 0);
         }
       }
     );
@@ -138,7 +140,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signUp, signOut, refreshProfile }}>
+    <AuthContext.Provider value={{ user, profile, loading: loading || profileLoading, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

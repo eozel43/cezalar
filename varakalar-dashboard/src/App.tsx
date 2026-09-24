@@ -1,372 +1,211 @@
-import React, { useState, useMemo } from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import Header from './components/Header';
-import SidebarLayout from './components/SidebarLayout';
-import Loading from './components/Loading';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { AlertTriangle, CalendarRange, Database } from 'lucide-react';
+import AppShell from './components/AppShell';
+import LoginPage from './components/LoginPage';
+import FilterBar from './components/FilterBar';
+import KpiCards from './components/KpiCards';
+import TopPlatesTable from './components/TopPlatesTable';
+import DataTable from './components/DataTable';
 import ExcelUpload from './components/ExcelUpload';
-import AuthModal from './components/AuthModal';
 import AdminPanel from './components/AdminPanel';
-import DashboardPage from './pages/DashboardPage';
-import DetailsPage from './pages/DetailsPage';
+import ParetoChart from './components/charts/ParetoChart';
+import KabahatBarChart from './components/charts/KabahatBarChart';
+import MonthlyTrendChart from './components/charts/MonthlyTrendChart';
+import WeekdayChart from './components/charts/WeekdayChart';
+import { Button, Card, EmptyState, PageHeader, Skeleton } from './components/ui';
 import { useVarakalarData } from './hooks/useVarakalarData';
 import { useAuth } from './contexts/useAuth';
+import { supabase } from './lib/supabase';
+import { applyFilters, applyFiltersForPeriod, calculateOzet, dataPeriod, previousPeriod } from './lib/stats';
+import { formatDateTime, formatLongDate } from './lib/format';
+import { EMPTY_FILTERS, Filters, SectionId } from './types';
 
-function AppContent() {
-  const { data, loading, error, refetch } = useVarakalarData();
-  const { user, profile, signOut } = useAuth();
-  
-  // View mode state (1-Click Switch / Rollback)
-  const [viewMode, setViewMode] = useState<'enterprise' | 'classic'>(() => {
-    const storedViewMode = localStorage.getItem('view_mode');
-    return storedViewMode === 'classic' || storedViewMode === 'enterprise'
-      ? storedViewMode
-      : 'enterprise';
-  });
+const SECTIONS: SectionId[] = ['genel', 'analiz', 'kayitlar', 'aktarim', 'yonetim'];
 
-  const handleToggleViewMode = () => {
-    const nextMode = viewMode === 'enterprise' ? 'classic' : 'enterprise';
-    setViewMode(nextMode);
-    localStorage.setItem('view_mode', nextMode);
-  };
+const sectionFromHash = (): SectionId => {
+  const id = window.location.hash.replace('#', '') as SectionId;
+  return SECTIONS.includes(id) ? id : 'genel';
+};
 
-  // Modal states
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [showAuthModal, setShowAuthModal] = useState(false);
-  const [showAdminPanel, setShowAdminPanel] = useState(false);
+const SECTION_META: Record<SectionId, { title: string; description: string }> = {
+  genel: { title: 'Genel Bakış', description: 'Seçili döneme ait temel göstergeler' },
+  analiz: { title: 'Analizler', description: 'Kabahat türleri ve zamana göre dağılımlar' },
+  kayitlar: { title: 'Kayıtlar', description: 'Varaka kayıtlarının ayrıntılı listesi' },
+  aktarim: { title: 'Veri Aktarımı', description: 'Excel dosyasından varaka kayıtlarını içe aktarın' },
+  yonetim: { title: 'Kullanıcı Yönetimi', description: 'Sisteme erişim taleplerini yönetin' },
+};
 
-
-  const handleUploadClick = () => {
-    if (!user) {
-      setShowAuthModal(true);
-    } else if (profile?.status !== 'active') {
-      alert('Hesabınız henüz onaylanmadı. Lütfen admin onayını bekleyin.');
-    } else {
-      setShowUploadModal(true);
-    }
-  };
-
-  // Escape tuşu ile modalları kapatma desteği
-  React.useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setShowUploadModal(false);
-        setShowAuthModal(false);
-        setShowAdminPanel(false);
-      }
-    };
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
-
-  // Date range calculation for Header/Global info
-  const { dateRangeText } = useMemo(() => {
-    if (!data || !data.varakalar.length) {
-      return { dateRangeText: 'Tarih aralığı bulunamadı' };
-    }
-
-    const allDates = data.varakalar
-      .map(varaka => varaka.tarih)
-      .filter(tarih => tarih && tarih.trim() !== '')
-      .map(tarih => new Date(tarih))
-      .sort((a, b) => a.getTime() - b.getTime());
-
-    if (allDates.length === 0) {
-      return { dateRangeText: 'Tarih bilgisi bulunamadı' };
-    }
-
-    const oldestDate = allDates[0];
-    const newestDate = allDates[allDates.length - 1];
-
-    const formatTurkishDate = (date: Date) => {
-      return date.toLocaleDateString('tr-TR', {
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric'
-      });
-    };
-
-    return {
-      dateRangeText: `${formatTurkishDate(oldestDate)} - ${formatTurkishDate(newestDate)}`
-    };
-  }, [data]);
-
-  // Loading state
-  if (loading) {
-    return <Loading />;
-  }
-
-  // If user is not logged in, render a premium landing page with Header & Footer
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-background-page flex flex-col dark:bg-neutral-950">
-        <Header 
-          onUploadClick={() => setShowAuthModal(true)}
-          onAuthClick={() => setShowAuthModal(true)}
-          onAdminClick={() => setShowAdminPanel(true)}
-        />
-        
-        {/* Auth Modal */}
-        {showAuthModal && (
-          <AuthModal onClose={() => setShowAuthModal(false)} />
-        )}
-        
-        <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800/80 p-8 text-center space-y-6 transform hover:scale-[1.02] transition-all duration-300">
-            <div className="w-20 h-20 mx-auto bg-primary-50 dark:bg-primary-950/30 rounded-full flex items-center justify-center text-primary-500 dark:text-primary-400">
-              <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-              </svg>
-            </div>
-            
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                Giriş Gerekli
-              </h2>
-              <p className="text-body text-neutral-600 dark:text-neutral-400 font-normal">
-                Varakalar Dashboard ve ceza analizlerini görüntülemek için lütfen sisteme giriş yapın.
-              </p>
-            </div>
-            
-            <button 
-              onClick={() => setShowAuthModal(true)} 
-              className="w-full py-3 px-6 bg-primary-500 text-white rounded-xl font-medium hover:bg-primary-600 transition-colors shadow-lg shadow-primary-500/20 active:scale-95 duration-150"
-            >
-              Giriş Yap
-            </button>
-          </div>
-        </main>
-        
-        <footer className="py-8 mt-16 border-t border-neutral-200 dark:border-neutral-800">
-          <div className="mx-auto max-w-7xl px-6 text-center">
-            <div className="text-body-sm text-neutral-500 mb-2">
-              © 2026 Varakalar Dashboard - Gelişmiş Trafik Cezası Analiz Sistemi
-            </div>
-            <div className="text-caption text-neutral-400">
-              Emre ÖZEL Endüstri Yük. Mühendisi
-            </div>
-          </div>
-        </footer>
-      </div>
-    );
-  }
-
-  // If user is logged in but profile status is not active (pending or rejected)
-  if (profile?.status !== 'active') {
-    const isPending = profile?.status === 'pending';
-
-    return (
-      <div className="min-h-screen bg-background-page flex flex-col dark:bg-neutral-950">
-        <Header 
-          onUploadClick={handleUploadClick}
-          onAuthClick={() => setShowAuthModal(true)}
-          onAdminClick={() => setShowAdminPanel(true)}
-        />
-        
-        {/* Auth Modal */}
-        {showAuthModal && (
-          <AuthModal onClose={() => setShowAuthModal(false)} />
-        )}
-        
-        <main className="flex-1 flex items-center justify-center p-6">
-          <div className="max-w-md w-full bg-white dark:bg-neutral-900 rounded-2xl shadow-xl border border-neutral-100 dark:border-neutral-800/80 p-8 text-center space-y-6 transform hover:scale-[1.02] transition-all duration-300">
-            <div className={`w-20 h-20 mx-auto rounded-full flex items-center justify-center ${
-              isPending 
-                ? 'bg-amber-50 dark:bg-amber-950/30 text-amber-500 dark:text-amber-400' 
-                : 'bg-red-50 dark:bg-red-950/30 text-red-500 dark:text-red-400'
-            }`}>
-              {isPending ? (
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              ) : (
-                <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
-                </svg>
-              )}
-            </div>
-            
-            <div className="space-y-2">
-              <h2 className="text-2xl font-bold text-neutral-900 dark:text-neutral-100">
-                {isPending ? 'Hesap Onay Bekliyor' : 'Erişim Engellendi'}
-              </h2>
-              <p className="text-body text-neutral-600 dark:text-neutral-400 font-normal">
-                {isPending 
-                  ? 'Hesabınız başarıyla oluşturuldu ancak henüz onaylanmadı. Lütfen yöneticinin hesabınızı onaylamasını bekleyin.' 
-                  : 'Hesabınız onaylanmamış, reddedilmiş veya kısıtlanmış olabilir. Lütfen sistem yöneticisi ile iletişime geçin. Sayfa açılmıyorsa F5 ile sayfayı yenileyin.'}
-              </p>
-            </div>
-            
-            <button 
-              onClick={() => signOut()} 
-              className="w-full py-3 px-6 border border-neutral-300 dark:border-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl font-medium hover:bg-neutral-50 dark:hover:bg-neutral-800 transition-colors duration-150"
-            >
-              Farklı Hesapla Giriş Yap / Çıkış
-            </button>
-          </div>
-        </main>
-        
-        <footer className="py-8 mt-16 border-t border-neutral-200 dark:border-neutral-800">
-          <div className="mx-auto max-w-7xl px-6 text-center">
-            <div className="text-body-sm text-neutral-500 mb-2">
-              © 2026 Varakalar Dashboard - Gelişmiş Trafik Cezası Analiz Sistemi
-            </div>
-            <div className="text-caption text-neutral-400">
-              Emre ÖZEL Endüstri Yük. Mühendisi
-            </div>
-          </div>
-        </footer>
-      </div>
-    );
-  }
-
-  // Error state
-  if (error || !data) {
-    return (
-      <div className="min-h-screen bg-background-page flex items-center justify-center dark:bg-neutral-950">
-        <div className="text-center p-8">
-          <div className="w-16 h-16 mx-auto mb-4 bg-semantic-error/10 rounded-full flex items-center justify-center">
-            <svg className="w-8 h-8 text-semantic-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16c-.77.833.192 2.5 1.732 2.5z" />
-            </svg>
-          </div>
-          <h2 className="text-heading-md font-semibold text-neutral-900 dark:text-neutral-100 mb-2">Hata Oluştu</h2>
-          <p className="text-body text-neutral-700 dark:text-neutral-300">{error || 'Veri yüklenirken beklenmeyen bir hata oluştu.'}</p>
-          <button 
-            onClick={() => window.location.reload()} 
-            className="mt-4 px-6 py-2 bg-primary-500 text-white rounded-md hover:bg-primary-600 transition-colors duration-200"
-          >
-            Sayfayı Yenile
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  const routes = (
-    <Routes>
-      <Route path="/" element={<DashboardPage data={data} dateRangeText={dateRangeText} />} />
-      <Route path="/detay" element={<DetailsPage varakalar={data.varakalar} />} />
-    </Routes>
-  );
-
-  const sharedModals = (
-    <>
-      {/* Auth Modal */}
-      {showAuthModal && (
-        <AuthModal onClose={() => setShowAuthModal(false)} />
-      )}
-      
-      {/* Admin Panel Modal */}
-      {showAdminPanel && profile?.role === 'admin' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-lg max-w-6xl w-full max-h-[90vh] overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="admin-modal-title"
-          >
-            <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
-              <h2 id="admin-modal-title" className="text-heading-md font-semibold text-neutral-900">Admin Paneli</h2>
-              <button 
-                onClick={() => setShowAdminPanel(false)} 
-                aria-label="Kapat"
-                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <AdminPanel />
-          </div>
-        </div>
-      )}
-      
-      {/* Upload Modal */}
-      {showUploadModal && user && profile?.status === 'active' && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="upload-modal-title"
-          >
-            <div className="sticky top-0 bg-white border-b border-neutral-200 px-6 py-4 flex items-center justify-between">
-              <h2 id="upload-modal-title" className="text-heading-md font-semibold text-neutral-900">Excel Dosyası Yükle</h2>
-              <button 
-                onClick={() => setShowUploadModal(false)} 
-                aria-label="Kapat"
-                className="p-2 hover:bg-neutral-100 rounded-lg transition-colors"
-              >
-                <svg className="w-6 h-6 text-neutral-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
-            </div>
-            <ExcelUpload 
-              onUploadComplete={() => {
-                setShowUploadModal(false);
-                refetch();
-              }} 
-            />
-          </div>
-        </div>
-      )}
-    </>
-  );
-
-  if (viewMode === 'enterprise') {
-    return (
-      <SidebarLayout
-        onUploadClick={handleUploadClick}
-        onAuthClick={() => setShowAuthModal(true)}
-        onAdminClick={() => setShowAdminPanel(true)}
-        onToggleViewMode={handleToggleViewMode}
-        varakalar={data?.varakalar}
-      >
-        {sharedModals}
-        {routes}
-      </SidebarLayout>
-    );
-  }
-
-
-  return (
-    <div className="min-h-screen bg-background-page">
-      <Header
-        onUploadClick={handleUploadClick}
-        onAuthClick={() => setShowAuthModal(true)}
-        onAdminClick={() => setShowAdminPanel(true)}
-        onToggleViewMode={handleToggleViewMode}
-      />
-
-      {sharedModals}
-      
-      <main className="mx-auto max-w-7xl">
-        {routes}
-      </main>
-      
-      {/* Footer */}
-      <footer className="py-8 mt-16 border-t border-neutral-200">
-        <div className="mx-auto max-w-7xl px-6 text-center">
-          <div className="text-body-sm text-neutral-500 mb-2">
-            © 2026 Varakalar Dashboard - Gelişmiş Trafik Cezası Analiz Sistemi
-          </div>
-          <div className="text-caption text-neutral-400">
-            Emre ÖZEL Endüstri Yük. Mühendisi
-          </div>
-        </div>
-      </footer>
+const DashboardSkeleton: React.FC = () => (
+  <div aria-busy="true" aria-label="Veriler yükleniyor">
+    <Skeleton className="h-24 mb-6" />
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-6">
+      {[0, 1, 2, 3].map(i => (
+        <Skeleton key={i} className="h-28" />
+      ))}
     </div>
-  );
-
-}
+    <Skeleton className="h-80" />
+  </div>
+);
 
 function App() {
+  const { user, profile, loading: authLoading } = useAuth();
+  const isActive = !!user && profile?.status === 'active';
+  const isAdmin = isActive && profile?.role === 'admin';
+  const { varakalar, loading, error, refetch } = useVarakalarData(isActive);
+
+  const [section, setSection] = useState<SectionId>(sectionFromHash);
+  const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
+  const [pendingCount, setPendingCount] = useState(0);
+
+  useEffect(() => {
+    const onHash = () => setSection(sectionFromHash());
+    window.addEventListener('hashchange', onHash);
+    return () => window.removeEventListener('hashchange', onHash);
+  }, []);
+
+  const navigate = (id: SectionId) => {
+    window.location.hash = id;
+    setSection(id);
+    window.scrollTo({ top: 0 });
+  };
+
+  const refreshPendingCount = useCallback(async () => {
+    if (!isAdmin) return;
+    const { count } = await supabase
+      .from('user_profiles')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'pending');
+    setPendingCount(count || 0);
+  }, [isAdmin]);
+
+  useEffect(() => {
+    refreshPendingCount();
+  }, [refreshPendingCount]);
+
+  const period = useMemo(() => dataPeriod(varakalar), [varakalar]);
+  const kabahatList = useMemo(() => [...new Set(varakalar.map(v => v.kabahat))].sort((a, b) => a.localeCompare(b, 'tr-TR')), [varakalar]);
+  const filtered = useMemo(() => applyFilters(varakalar, filters), [varakalar, filters]);
+  const ozet = useMemo(() => calculateOzet(filtered), [filtered]);
+
+  // KPI comparison with the equally long period right before the selected range
+  const previousOzet = useMemo(() => {
+    const prev = previousPeriod(filters.start, filters.end);
+    return prev ? calculateOzet(applyFiltersForPeriod(varakalar, filters, prev.start, prev.end)) : null;
+  }, [varakalar, filters]);
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background-page">
+        <Skeleton className="w-64 h-6" />
+      </div>
+    );
+  }
+
+  // Records contain personal data: only approved users may see them
+  if (!user) return <LoginPage />;
+  if (!isActive) return <LoginPage status={profile?.status === 'rejected' ? 'rejected' : 'pending'} />;
+
+  const activeSection = section === 'yonetim' && !isAdmin ? 'genel' : section;
+  const meta = SECTION_META[activeSection];
+  const usesData = activeSection === 'genel' || activeSection === 'analiz' || activeSection === 'kayitlar';
+
+  const showPlate = (plaka: string) => {
+    setFilters({ ...filters, searchTerm: plaka });
+    navigate('kayitlar');
+  };
+
+  const renderDataSection = () => {
+    if (loading) return <DashboardSkeleton />;
+
+    if (error) {
+      return (
+        <Card>
+          <EmptyState icon={<AlertTriangle className="w-8 h-8" />} title="Veriler yüklenemedi" description={error} />
+          <div className="pb-8 text-center">
+            <Button onClick={refetch}>Tekrar Dene</Button>
+          </div>
+        </Card>
+      );
+    }
+
+    if (!varakalar.length) {
+      return (
+        <Card>
+          <EmptyState icon={<Database className="w-8 h-8" />} title="Henüz kayıt yok" description="Başlamak için Excel dosyasından varaka kayıtlarını aktarın." />
+          <div className="pb-8 text-center">
+            <Button variant="primary" onClick={() => navigate('aktarim')}>Veri Aktarımına Git</Button>
+          </div>
+        </Card>
+      );
+    }
+
+    return (
+      <>
+        <FilterBar
+          filters={filters}
+          onChange={setFilters}
+          kabahatList={kabahatList}
+          dataEnd={period?.end || ''}
+          totalCount={varakalar.length}
+          filteredCount={filtered.length}
+        />
+
+        {activeSection === 'genel' && (
+          <>
+            <KpiCards ozet={ozet} previous={previousOzet} />
+            <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+              <div className="xl:col-span-3">
+                <MonthlyTrendChart varakalar={filtered} />
+              </div>
+              <div className="xl:col-span-2">
+                <TopPlatesTable varakalar={filtered} onSelect={showPlate} />
+              </div>
+            </div>
+          </>
+        )}
+
+        {activeSection === 'analiz' && (
+          <div className="space-y-6">
+            <ParetoChart varakalar={filtered} />
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+              <KabahatBarChart varakalar={filtered} />
+              <WeekdayChart varakalar={filtered} />
+            </div>
+          </div>
+        )}
+
+        {activeSection === 'kayitlar' && <DataTable data={filtered} />}
+      </>
+    );
+  };
+
   return (
-    <BrowserRouter>
-      <AppContent />
-    </BrowserRouter>
+    <AppShell section={activeSection} onNavigate={navigate} pendingCount={pendingCount}>
+      <PageHeader
+        title={meta.title}
+        description={meta.description}
+      />
+
+      {usesData && period && !loading && (
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 -mt-3 mb-5 text-body-sm text-neutral-500">
+          <span className="inline-flex items-center gap-1.5">
+            <CalendarRange className="w-4 h-4" />
+            Veri dönemi: <span className="text-neutral-700">{formatLongDate(period.start)} – {formatLongDate(period.end)}</span>
+          </span>
+          {period.lastImport && (
+            <span>
+              Son aktarım: <span className="text-neutral-700">{formatDateTime(period.lastImport)}</span>
+            </span>
+          )}
+        </div>
+      )}
+
+      {usesData && renderDataSection()}
+
+      {activeSection === 'aktarim' && <ExcelUpload onUploadComplete={refetch} />}
+
+      {activeSection === 'yonetim' && isAdmin && <AdminPanel onPendingChange={refreshPendingCount} />}
+    </AppShell>
   );
 }
 
