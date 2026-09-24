@@ -12,6 +12,10 @@ import ParetoChart from './components/charts/ParetoChart';
 import KabahatBarChart from './components/charts/KabahatBarChart';
 import MonthlyTrendChart from './components/charts/MonthlyTrendChart';
 import PlateFrequencyChart from './components/charts/PlateFrequencyChart';
+import RepeatIntervalChart from './components/charts/RepeatIntervalChart';
+import YearlyComparisonChart from './components/charts/YearlyComparisonChart';
+import KabahatHeatmap from './components/charts/KabahatHeatmap';
+import RepeatPlateProfileChart from './components/charts/RepeatPlateProfileChart';
 import { Button, Card, EmptyState, PageHeader, Skeleton } from './components/ui';
 import { useVarakalarData } from './hooks/useVarakalarData';
 import { useAuth } from './contexts/useAuth';
@@ -171,6 +175,12 @@ function App() {
               <KabahatBarChart varakalar={filtered} />
               <PlateFrequencyChart varakalar={filtered} />
             </div>
+            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
+              <RepeatIntervalChart varakalar={filtered} />
+              <YearlyComparisonChart varakalar={filtered} />
+            </div>
+            <KabahatHeatmap varakalar={filtered} />
+            <RepeatPlateProfileChart varakalar={filtered} />
           </div>
         )}
 

@@ -113,3 +113,65 @@ export const dataPeriod = (varakalar: Varaka[]) => {
   });
   return { start: min, end: max, lastImport };
 };
+
+const DAY_MS = 86400000;
+
+// Days between consecutive fines of the same plate (one entry per repeat fine)
+export const repeatGaps = (varakalar: Varaka[]) => {
+  const byPlate = new Map<string, number[]>();
+  varakalar.forEach(v => {
+    const list = byPlate.get(v.plaka_no) || [];
+    list.push(parseDate(v.tarih).getTime());
+    byPlate.set(v.plaka_no, list);
+  });
+
+  const gaps: number[] = [];
+  byPlate.forEach(times => {
+    times.sort((a, b) => a - b);
+    for (let i = 1; i < times.length; i++) {
+      gaps.push(Math.round((times[i] - times[i - 1]) / DAY_MS));
+    }
+  });
+  return gaps;
+};
+
+export const median = (values: number[]) => {
+  if (!values.length) return null;
+  const sorted = [...values].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+};
+
+export interface YearStats {
+  year: number;
+  count: number;
+  avgFine: number | null; // para cezalarının ortalaması (men cezaları hariç)
+  firstDate: string;
+  lastDate: string;
+}
+
+export const yearlyStats = (varakalar: Varaka[]): YearStats[] => {
+  const years = new Map<number, { count: number; paraSum: number; paraCount: number; firstDate: string; lastDate: string }>();
+  varakalar.forEach(v => {
+    const year = Number(v.tarih.slice(0, 4));
+    const y = years.get(year) || { count: 0, paraSum: 0, paraCount: 0, firstDate: '9999', lastDate: '' };
+    y.count += 1;
+    if (!isMenCezasi(v)) {
+      y.paraSum += v.ceza_miktari;
+      y.paraCount += 1;
+    }
+    if (v.tarih < y.firstDate) y.firstDate = v.tarih.slice(0, 10);
+    if (v.tarih > y.lastDate) y.lastDate = v.tarih.slice(0, 10);
+    years.set(year, y);
+  });
+
+  return [...years.entries()]
+    .sort(([a], [b]) => a - b)
+    .map(([year, y]) => ({
+      year,
+      count: y.count,
+      avgFine: y.paraCount ? y.paraSum / y.paraCount : null,
+      firstDate: y.firstDate,
+      lastDate: y.lastDate,
+    }));
+};
