@@ -117,7 +117,7 @@ export const dataPeriod = (varakalar: Varaka[]) => {
 const DAY_MS = 86400000;
 
 // Days between consecutive fines of the same plate (one entry per repeat fine)
-export const repeatGaps = (varakalar: Varaka[]) => {
+export const repeatGapDetails = (varakalar: Varaka[]) => {
   const byPlate = new Map<string, number[]>();
   varakalar.forEach(v => {
     const list = byPlate.get(v.plaka_no) || [];
@@ -125,14 +125,14 @@ export const repeatGaps = (varakalar: Varaka[]) => {
     byPlate.set(v.plaka_no, list);
   });
 
-  const gaps: number[] = [];
-  byPlate.forEach(times => {
+  const details: { plaka: string; gap: number }[] = [];
+  byPlate.forEach((times, plaka) => {
     times.sort((a, b) => a - b);
     for (let i = 1; i < times.length; i++) {
-      gaps.push(Math.round((times[i] - times[i - 1]) / DAY_MS));
+      details.push({ plaka, gap: Math.round((times[i] - times[i - 1]) / DAY_MS) });
     }
   });
-  return gaps;
+  return details;
 };
 
 export const median = (values: number[]) => {

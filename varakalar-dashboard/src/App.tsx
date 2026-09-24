@@ -176,7 +176,7 @@ function App() {
               <PlateFrequencyChart varakalar={filtered} />
             </div>
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
-              <RepeatIntervalChart varakalar={filtered} />
+              <RepeatIntervalChart varakalar={filtered} onSelectPlate={showPlate} />
               <YearlyComparisonChart varakalar={filtered} />
             </div>
             <KabahatHeatmap varakalar={filtered} />
