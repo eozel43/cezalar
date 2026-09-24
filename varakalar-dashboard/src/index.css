@@ -101,19 +101,34 @@
   }
 }
 
-/* Print / PDF report */
+/* Print / PDF report on municipal letterhead */
 @media print {
   @page {
-    size: A4 landscape;
-    margin: 12mm;
+    size: A4 portrait;
+    margin: 14mm 12mm 16mm;
+
+    @bottom-left {
+      content: "Kütahya Belediyesi · Ulaşım Hizmetleri Müdürlüğü";
+      font: 7.5pt Inter, sans-serif;
+      color: #475569;
+    }
+
+    @bottom-right {
+      content: "Sayfa " counter(page) " / " counter(pages);
+      font: 7.5pt Inter, sans-serif;
+      color: #475569;
+    }
   }
 
+  html,
   body {
     background: #fff !important;
-    font-size: 11px;
+    color: #000;
+    font-size: 9pt;
   }
 
-  .no-print {
+  .no-print,
+  [data-sonner-toaster] {
     display: none !important;
   }
 
@@ -125,19 +140,73 @@
     padding: 0 !important;
   }
 
-  table {
-    font-size: 10px;
+  /* Paper is white; let the watermark show through every surface */
+  #root,
+  #root *,
+  #root *::before,
+  #root *::after {
+    background-color: transparent !important;
+    box-shadow: none !important;
   }
 
-  tr {
+  /* Faint logo in the middle of every page */
+  .print-watermark {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    width: 120mm;
+    height: 120mm;
+    transform: translate(-50%, -50%);
+    opacity: 0.07;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  main {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Data table */
+  .print-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 8.5pt;
+    color: #000;
+  }
+
+  .print-table thead {
+    display: table-header-group; /* repeat header row on every page */
+  }
+
+  .print-table th {
+    padding: 4px 6px !important;
+    border-top: 1.5px solid #000;
+    border-bottom: 1.5px solid #000 !important;
+    color: #000 !important;
+    font-size: 7.5pt;
+  }
+
+  .print-table td {
+    padding: 3px 6px !important;
+    border-bottom: 0.5px solid #94a3b8 !important;
+    color: #000 !important;
+    vertical-align: top;
+  }
+
+  .print-table tr {
     break-inside: avoid;
   }
 
-  thead {
-    display: table-header-group;
+  .print-table td span {
+    color: #000 !important;
+    border: 0 !important;
+    padding: 0 !important;
   }
 
-  .shadow-sm {
-    box-shadow: none !important;
+  .print-info th,
+  .print-info td {
+    border: 0;
+    color: #000;
   }
 }

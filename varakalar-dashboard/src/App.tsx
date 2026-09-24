@@ -5,7 +5,7 @@ import LoginPage from './components/LoginPage';
 import FilterBar from './components/FilterBar';
 import KpiCards from './components/KpiCards';
 import TopPlatesTable from './components/TopPlatesTable';
-import DataTable from './components/DataTable';
+import DataTable, { PrintInfoItem } from './components/DataTable';
 import ExcelUpload from './components/ExcelUpload';
 import AdminPanel from './components/AdminPanel';
 import ParetoChart from './components/charts/ParetoChart';
@@ -113,6 +113,24 @@ function App() {
   const meta = SECTION_META[activeSection];
   const usesData = activeSection === 'genel' || activeSection === 'analiz' || activeSection === 'kayitlar';
 
+  // Report details printed under the letterhead
+  const CEZA_TURU_LABELS: Record<string, string> = { '': 'Tümü', para: 'Para cezası', men: 'Men cezası' };
+  const printInfo: PrintInfoItem[] = [
+    {
+      label: 'Kapsanan dönem',
+      value:
+        filters.start || filters.end
+          ? `${filters.start ? formatLongDate(filters.start) : '…'} – ${filters.end ? formatLongDate(filters.end) : '…'}`
+          : period
+            ? `${formatLongDate(period.start)} – ${formatLongDate(period.end)} (tüm kayıtlar)`
+            : 'Tüm kayıtlar',
+    },
+    { label: 'Kabahat türü', value: filters.kabahat || 'Tümü' },
+    { label: 'Ceza türü', value: CEZA_TURU_LABELS[filters.cezaTuru] },
+    ...(filters.searchTerm ? [{ label: 'Arama', value: `"${filters.searchTerm}"` }] : []),
+    { label: 'Hazırlayan', value: user.email || '' },
+  ];
+
   const showPlate = (plaka: string) => {
     setFilters({ ...filters, searchTerm: plaka });
     navigate('kayitlar');
@@ -184,7 +202,7 @@ function App() {
           </div>
         )}
 
-        {activeSection === 'kayitlar' && <DataTable data={filtered} />}
+        {activeSection === 'kayitlar' && <DataTable data={filtered} printInfo={printInfo} />}
       </>
     );
   };
@@ -197,7 +215,7 @@ function App() {
       />
 
       {usesData && period && !loading && (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 -mt-3 mb-5 text-body-sm text-neutral-500">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 -mt-3 mb-5 text-body-sm text-neutral-500 print:hidden">
           <span className="inline-flex items-center gap-1.5">
             <CalendarRange className="w-4 h-4" />
             Veri dönemi: <span className="text-neutral-700">{formatLongDate(period.start)} – {formatLongDate(period.end)}</span>

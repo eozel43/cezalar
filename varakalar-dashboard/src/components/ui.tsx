@@ -61,7 +61,7 @@ export const PageHeader: React.FC<{ title: string; description?: string; actions
   description,
   actions,
 }) => (
-  <div className="flex flex-wrap items-end justify-between gap-3 mb-5">
+  <div className="flex flex-wrap items-end justify-between gap-3 mb-5 print:hidden">
     <div>
       <h1 className="text-heading-lg text-neutral-900">{title}</h1>
       {description && <p className="text-body text-neutral-500 mt-1">{description}</p>}

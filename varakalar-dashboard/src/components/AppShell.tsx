@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { LayoutDashboard, BarChart3, TableProperties, Upload, Users, LogOut, Menu, X } from 'lucide-react';
 import BrandMark from './BrandMark';
+import PrintLetterhead from './PrintLetterhead';
 import { useAuth } from '../contexts/useAuth';
 import { APP_CONFIG } from '../config';
 import { SectionId } from '../types';
@@ -115,12 +116,7 @@ const AppShell: React.FC<AppShellProps> = ({ section, onNavigate, pendingCount =
           <BrandMark />
         </header>
 
-        {/* Print-only report header */}
-        <div className="hidden print:block px-8 pt-6 pb-4 border-b border-neutral-300">
-          <div className="text-body-sm text-neutral-600">{APP_CONFIG.institution} · {APP_CONFIG.department}</div>
-          <div className="text-heading-md text-neutral-900">{APP_CONFIG.appName}</div>
-          <div className="text-caption text-neutral-500">Rapor tarihi: {new Date().toLocaleString('tr-TR')}</div>
-        </div>
+        <PrintLetterhead />
 
         <main className="flex-1 px-4 sm:px-6 lg:px-8 py-6">{children}</main>
 

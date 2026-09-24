@@ -6,6 +6,7 @@ import { formatCurrency, formatDate, formatNumber, toIsoDate } from '../lib/form
 import { isMenCezasi } from '../lib/stats';
 import { Card, CardHeader, Button, EmptyState } from './ui';
 import { cn } from '../lib/utils';
+import { APP_CONFIG } from '../config';
 
 const PAGE_SIZES = [25, 50, 100];
 
@@ -39,7 +40,18 @@ const exportToExcel = async (rows: Varaka[]) => {
   XLSX.writeFile(book, `varakalar_${toIsoDate(new Date())}.xlsx`);
 };
 
-const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
+export interface PrintInfoItem {
+  label: string;
+  value: string;
+}
+
+interface DataTableProps {
+  data: Varaka[];
+  // Report details printed under the letterhead (filters, period, ...)
+  printInfo?: PrintInfoItem[];
+}
+
+const DataTable: React.FC<DataTableProps> = ({ data, printInfo = [] }) => {
   const [sortConfig, setSortConfig] = useState<SortConfig | null>({ key: 'tarih', direction: 'desc' });
   const [pageSize, setPageSize] = useState(25);
   const [page, setPage] = useState(0);
@@ -91,7 +103,8 @@ const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
   };
 
   return (
-    <Card>
+    <Card className="print:border-0 print:shadow-none print:rounded-none print:bg-transparent">
+      <div className="print:hidden">
       <CardHeader
         title="Varaka Kayıtları"
         description={`${formatNumber(data.length)} kayıt · Toplam ${formatCurrency(toplamTutar)}`}
@@ -108,12 +121,33 @@ const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
           </>
         }
       />
+      </div>
+
+      {/* Paper only: report title and details under the letterhead */}
+      <div className="hidden print:block mb-4 text-black">
+        <h2 className="text-center text-[13pt] font-bold tracking-wide mb-3">ZABIT VARAKASI KAYIT LİSTESİ</h2>
+        <table className="print-info w-full text-[9pt]">
+          <tbody>
+            {[
+              ...printInfo,
+              { label: 'Kayıt sayısı', value: formatNumber(data.length) },
+              { label: 'Toplam ceza tutarı', value: formatCurrency(toplamTutar) },
+              { label: 'Rapor tarihi', value: new Date().toLocaleString('tr-TR', { dateStyle: 'long', timeStyle: 'short' }) },
+            ].map(item => (
+              <tr key={item.label}>
+                <th scope="row" className="text-left font-semibold pr-3 py-0.5 w-[38mm] align-top">{item.label}</th>
+                <td className="py-0.5">{item.value}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       {data.length === 0 ? (
         <EmptyState title="Seçili filtrelerle kayıt bulunamadı" description="Filtreleri değiştirerek tekrar deneyin." />
       ) : (
-        <div className="overflow-auto max-h-[calc(100vh-260px)] min-h-[300px] print:max-h-none print:overflow-visible">
-          <table className="w-full text-body">
+        <div className="overflow-auto max-h-[calc(100vh-260px)] min-h-[300px] print:min-h-0 print:max-h-none print:overflow-visible">
+          <table className="print-table w-full text-body">
             <thead className="sticky top-0 z-10 bg-neutral-50 print:static">
               <tr className="border-b border-neutral-200">
                 {COLUMNS.map(col => {
@@ -129,9 +163,11 @@ const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
                         col.align === 'right' ? 'text-right' : 'text-left'
                       )}
                     >
+                      {/* Plain label on paper: buttons are not repainted in repeated header rows */}
+                      <span className="hidden print:inline">{col.label}</span>
                       <button
                         onClick={() => handleSort(col.key)}
-                        className={cn('inline-flex items-center gap-1 hover:text-neutral-900', col.align === 'right' && 'flex-row-reverse')}
+                        className={cn('inline-flex items-center gap-1 hover:text-neutral-900 print:hidden', col.align === 'right' && 'flex-row-reverse')}
                       >
                         {col.label}
                         <Icon className={cn('w-3.5 h-3.5 no-print', active ? 'text-neutral-700' : 'text-neutral-300')} />
@@ -147,7 +183,7 @@ const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
                   <td className="px-4 py-2 text-neutral-500 tabular-nums">{v.sira_no}</td>
                   <td className="px-4 py-2 whitespace-nowrap tabular-nums">
                     {formatDate(v.tarih)}
-                    <span className="block text-caption text-neutral-500">{v.gun}</span>
+                    <span className="block text-caption text-neutral-500 print:hidden">{v.gun}</span>
                   </td>
                   <td className="px-4 py-2 font-medium text-neutral-900 whitespace-nowrap">{v.plaka_no}</td>
                   <td className="px-4 py-2 text-neutral-700 whitespace-nowrap">{v.isim}</td>
@@ -205,6 +241,11 @@ const DataTable: React.FC<{ data: Varaka[] }> = ({ data }) => {
           </div>
         </div>
       )}
+
+      <p className="hidden print:block mt-4 pt-2 border-t border-neutral-400 text-[8pt] text-neutral-700">
+        Bu liste {APP_CONFIG.appName} kayıtlarından oluşturulmuştur. Kişisel veri içerir; 6698 sayılı Kişisel Verilerin
+        Korunması Kanunu kapsamında yalnızca yetkili personel tarafından kullanılmalıdır.
+      </p>
     </Card>
   );
 };
