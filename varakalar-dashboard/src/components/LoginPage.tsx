@@ -35,7 +35,7 @@ const AuthForm: React.FC = () => {
         msg.includes('Invalid login credentials')
           ? 'E-posta adresi veya şifre hatalı.'
           : msg.includes('already registered')
-            ? 'Bu e-posta adresiyle zaten bir hesap var.'
+            ? 'Bu e-posta adresiyle zaten bir hesap var. Giriş yapmayı deneyin; şifrenizi hatırlamıyorsanız sistem yöneticisine başvurun.'
             : msg || 'Bir hata oluştu.'
       );
     } finally {

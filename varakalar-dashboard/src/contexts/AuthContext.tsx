@@ -118,6 +118,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     if (error) throw error;
 
+    // An existing address gets a "successful" reply without identities (no new
+    // account is created, to avoid revealing registered emails); tell the user
+    if (data.user && (data.user.identities?.length ?? 0) === 0) {
+      throw new Error('User already registered');
+    }
+
     // Profile (pending) is created by the on_auth_user_created DB trigger
     if (data.user) {
       // Notify admin about new user (non-blocking)
