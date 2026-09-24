@@ -34,7 +34,7 @@ const Delta: React.FC<{ current: number; previous: number }> = ({ current, previ
 };
 
 const KpiCards: React.FC<KpiCardsProps> = ({ ozet, previous }) => {
-  const menOrani = ozet.toplam_sayisi ? (ozet.men_cezasi_sayisi / ozet.toplam_sayisi) * 100 : 0;
+  const aracBasina = ozet.arac_sayisi ? ozet.toplam_sayisi / ozet.arac_sayisi : 0;
 
   const items = [
     {
@@ -59,11 +59,11 @@ const KpiCards: React.FC<KpiCardsProps> = ({ ozet, previous }) => {
       prev: previous?.ortalama_ceza,
     },
     {
-      label: 'Men Cezası',
-      value: formatNumber(ozet.men_cezasi_sayisi),
-      note: `Tüm varakalar içinde ${formatPercent(menOrani)}`,
-      current: ozet.men_cezasi_sayisi,
-      prev: previous?.men_cezasi_sayisi,
+      label: 'Ceza Alan Araç',
+      value: formatNumber(ozet.arac_sayisi),
+      note: `Araç başına ${aracBasina.toLocaleString('tr-TR', { maximumFractionDigits: 1 })} ceza · ${formatNumber(ozet.tekrar_eden_arac_sayisi)} araç birden fazla`,
+      current: ozet.arac_sayisi,
+      prev: previous?.arac_sayisi,
     },
   ];
 
@@ -73,13 +73,12 @@ const KpiCards: React.FC<KpiCardsProps> = ({ ozet, previous }) => {
         <Card key={item.label} className="px-5 py-4">
           <div className="text-body-sm font-medium text-neutral-500">{item.label}</div>
           <div className="mt-1.5 text-heading-xl text-neutral-900 tabular-nums">{item.value}</div>
-          <div className="mt-2 min-h-[18px]">
-            {previous && item.prev !== undefined ? (
+          <div className="mt-2 text-caption text-neutral-500">{item.note}</div>
+          {previous && item.prev !== undefined && (
+            <div className="mt-1">
               <Delta current={item.current} previous={item.prev} />
-            ) : (
-              <span className="text-caption text-neutral-500">{item.note}</span>
-            )}
-          </div>
+            </div>
+          )}
         </Card>
       ))}
     </div>

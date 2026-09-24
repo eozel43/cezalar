@@ -36,6 +36,8 @@ export interface Ozet {
   ortalama_ceza: number;
   para_cezasi_sayisi: number;
   men_cezasi_sayisi: number;
+  arac_sayisi: number; // ceza alan farklı plaka
+  tekrar_eden_arac_sayisi: number; // birden fazla ceza alan plaka
 }
 
 export interface SortConfig {

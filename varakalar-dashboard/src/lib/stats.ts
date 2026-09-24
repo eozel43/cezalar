@@ -6,12 +6,16 @@ export const isMenCezasi = (v: Varaka) => v.ceza_turu === 'men' || v.ceza_miktar
 export const calculateOzet = (varakalar: Varaka[]): Ozet => {
   const toplam_ceza_tutari = varakalar.reduce((sum, v) => sum + v.ceza_miktari, 0);
   const men_cezasi_sayisi = varakalar.filter(isMenCezasi).length;
+  const perPlate = new Map<string, number>();
+  varakalar.forEach(v => perPlate.set(v.plaka_no, (perPlate.get(v.plaka_no) || 0) + 1));
   return {
     toplam_sayisi: varakalar.length,
     toplam_ceza_tutari,
     ortalama_ceza: varakalar.length > 0 ? toplam_ceza_tutari / varakalar.length : 0,
     para_cezasi_sayisi: varakalar.length - men_cezasi_sayisi,
     men_cezasi_sayisi,
+    arac_sayisi: perPlate.size,
+    tekrar_eden_arac_sayisi: [...perPlate.values()].filter(n => n > 1).length,
   };
 };
 
