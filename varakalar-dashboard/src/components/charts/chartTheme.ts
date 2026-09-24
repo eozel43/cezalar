@@ -28,7 +28,9 @@ ChartJS.register(
 ChartJS.defaults.font.family = "Inter, -apple-system, 'Segoe UI', sans-serif";
 ChartJS.defaults.font.size = 12;
 ChartJS.defaults.color = '#475569';
-ChartJS.defaults.animation = { duration: 250 } as any;
+// No animation: charts paint immediately, even when the tab is in the background,
+// while switching sections or when printing (animated first paint needs rAF)
+ChartJS.defaults.animation = false;
 
 // Tek renk ailesi (lacivert) + tek vurgu rengi (kümülatif/ikincil seri için)
 export const CHART_COLORS = {

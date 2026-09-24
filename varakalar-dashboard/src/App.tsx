@@ -11,7 +11,7 @@ import AdminPanel from './components/AdminPanel';
 import ParetoChart from './components/charts/ParetoChart';
 import KabahatBarChart from './components/charts/KabahatBarChart';
 import MonthlyTrendChart from './components/charts/MonthlyTrendChart';
-import WeekdayChart from './components/charts/WeekdayChart';
+import PlateFrequencyChart from './components/charts/PlateFrequencyChart';
 import { Button, Card, EmptyState, PageHeader, Skeleton } from './components/ui';
 import { useVarakalarData } from './hooks/useVarakalarData';
 import { useAuth } from './contexts/useAuth';
@@ -169,7 +169,7 @@ function App() {
             <ParetoChart varakalar={filtered} />
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-start">
               <KabahatBarChart varakalar={filtered} />
-              <WeekdayChart varakalar={filtered} />
+              <PlateFrequencyChart varakalar={filtered} />
             </div>
           </div>
         )}
