@@ -1,3 +1,6 @@
+-- UYARI: Bu dosya ESKİDİR ve güvensiz RLS kuralları içerir. ÇALIŞTIRMAYIN.
+-- Güncel güvenlik yapılandırması: supabase/migrations/1790240000_security_hardening.sql
+
 -- User profiles tablosu
 CREATE TABLE IF NOT EXISTS user_profiles (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),

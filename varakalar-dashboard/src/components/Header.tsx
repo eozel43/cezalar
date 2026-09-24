@@ -20,7 +20,8 @@ const Header: React.FC<HeaderProps> = ({ onUploadClick, onAuthClick, onAdminClic
       <div className="mx-auto max-w-7xl px-6">
         {/* Üst Satır: Başlık ve Kullanıcı İşlemleri */}
         <div className="flex h-16 items-center justify-between">
-          <h1 className="text-heading-lg font-bold text-neutral-900 dark:text-neutral-200">
+          <h1 className="flex items-center gap-3 text-heading-lg font-bold text-neutral-900 dark:text-neutral-200">
+            <img src="/logo.png" alt="T.C. Kütahya Belediyesi" className="size-10 rounded-full object-contain" />
             Varakalar Dashboard
           </h1>
           

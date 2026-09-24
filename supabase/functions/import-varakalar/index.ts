@@ -27,15 +27,19 @@ Deno.serve(async (req) => {
             throw new Error('Supabase yapılandırması eksik');
         }
 
-        // 1. Yetkilendirme Başlığı Kontrolü
-        const authHeader = req.headers.get('authorization');
-        if (!authHeader) {
-            throw new Error('Yetkisiz işlem: Yetkilendirme başlığı eksik');
+        // Verify caller is an approved (active) user
+        const forbidden = (status: number, message: string) => new Response(JSON.stringify({
+            error: { code: 'UNAUTHORIZED', message }
+        }), {
+            status,
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        });
+
+        const token = (req.headers.get('authorization') || '').replace('Bearer ', '');
+        if (!token) {
+            return forbidden(401, 'Yetkilendirme başlığı eksik');
         }
 
-        const token = authHeader.replace('Bearer ', '');
-
-        // 2. Kullanıcı Kimlik Doğrulaması (Token Doğrulama)
         const userResponse = await fetch(`${supabaseUrl}/auth/v1/user`, {
             headers: {
                 'Authorization': `Bearer ${token}`,
@@ -44,15 +48,16 @@ Deno.serve(async (req) => {
         });
 
         if (!userResponse.ok) {
-            throw new Error('Yetkisiz işlem: Geçersiz oturum anahtarı');
+            return forbidden(401, 'Oturum geçersiz. Lütfen tekrar giriş yapın.');
         }
 
-        const currentUserData = await userResponse.json();
-        const currentUserId = currentUserData.id;
+        const currentUser = await userResponse.json();
+        if (!currentUser?.id) {
+            return forbidden(401, 'Oturum geçersiz. Lütfen tekrar giriş yapın.');
+        }
 
-        // 3. Kullanıcı Durum Kontrolü (Aktif olup olmadığı kontrolü)
-        const statusCheckResponse = await fetch(
-            `${supabaseUrl}/rest/v1/user_profiles?user_id=eq.${currentUserId}&select=status`,
+        const profileResponse = await fetch(
+            `${supabaseUrl}/rest/v1/user_profiles?user_id=eq.${encodeURIComponent(currentUser.id)}&select=status`,
             {
                 headers: {
                     'Authorization': `Bearer ${serviceRoleKey}`,
@@ -61,14 +66,32 @@ Deno.serve(async (req) => {
             }
         );
 
-        if (!statusCheckResponse.ok) {
-            throw new Error('Yetkisiz işlem: Kullanıcı durumu kontrol edilemedi');
+        const profiles = profileResponse.ok ? await profileResponse.json() : [];
+        if (!profiles.length || profiles[0].status !== 'active') {
+            return forbidden(403, 'Bu işlem için onaylı bir hesap gerekli');
         }
 
-        const statusData = await statusCheckResponse.json();
-        if (!statusData || statusData.length === 0 || statusData[0].status !== 'active') {
-            throw new Error('Yetkisiz işlem: Bu işlem için aktif bir kullanıcı hesabı gereklidir');
-        }
+        // Validate and transform data
+        const transformedData = varakalar.map((varaka: any) => {
+            // Basic validation
+            if (!varaka.tarih || !varaka.plaka_no || !varaka.isim || !varaka.kabahat) {
+                throw new Error('Eksik alan: tarih, plaka_no, isim ve kabahat gerekli');
+            }
+
+            return {
+                sira_no: varaka.sira_no || null,
+                tarih: varaka.tarih,
+                gun: varaka.gun || '',
+                plaka_no: varaka.plaka_no,
+                isim: varaka.isim,
+                kabahat: varaka.kabahat,
+                ceza_miktari: parseFloat(varaka.ceza_miktari) || 0,
+                ay: parseInt(varaka.ay) || null,
+                mevsim: varaka.mevsim || null,
+                ceza_turu: varaka.ceza_turu || null,
+                ceza_detay: varaka.ceza_detay || null
+            };
+        });
 
         // Track deleted record count
         let deletedCount = 0;
@@ -124,28 +147,6 @@ Deno.serve(async (req) => {
 
             console.log(`Deleted ${deletedCount} existing records`);
         }
-
-        // Validate and transform data
-        const transformedData = varakalar.map((varaka: any) => {
-            // Basic validation
-            if (!varaka.tarih || !varaka.plaka_no || !varaka.isim || !varaka.kabahat) {
-                throw new Error('Eksik alan: tarih, plaka_no, isim ve kabahat gerekli');
-            }
-
-            return {
-                sira_no: varaka.sira_no || null,
-                tarih: varaka.tarih,
-                gun: varaka.gun || '',
-                plaka_no: varaka.plaka_no,
-                isim: varaka.isim,
-                kabahat: varaka.kabahat,
-                ceza_miktari: parseFloat(varaka.ceza_miktari) || 0,
-                ay: parseInt(varaka.ay) || null,
-                mevsim: varaka.mevsim || null,
-                ceza_turu: varaka.ceza_turu || null,
-                ceza_detay: varaka.ceza_detay || null
-            };
-        });
 
         // Batch insert (100 records at a time)
         const batchSize = 100;

@@ -116,21 +116,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     });
     if (error) throw error;
 
-    // Create user profile with pending status
+    // Profile (pending) is created by the on_auth_user_created DB trigger
     if (data.user) {
-      const { error: profileError } = await supabase
-        .from('user_profiles')
-        .insert({
-          user_id: data.user.id,
-          email: email,
-          role: 'pending',
-          status: 'pending'
-        });
-
-      if (profileError) {
-        console.error('Error creating user profile:', profileError);
-      }
-
       // Notify admin about new user (non-blocking)
       try {
         await supabase.functions.invoke('notify-admin-new-user', {

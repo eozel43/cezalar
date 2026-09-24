@@ -40,3 +40,10 @@ out/
 # Parent directories (should not be tracked)
 ../../
 ../../**
+
+# Kişisel veri içeren dosyalar (KVKK) - repoya ve public/ klasörüne konmamalı
+data/
+varakalar-dashboard/public/data/
+
+# Ortam değişkenleri
+.env

@@ -15,7 +15,6 @@ import {
   ChevronRight,
   Menu,
   X,
-  Layers,
   Sparkles,
   RotateCcw,
   SlidersHorizontal
@@ -268,9 +267,11 @@ const SidebarLayout: React.FC<SidebarLayoutProps> = ({
           {/* Sidebar Header / Brand */}
           <div className="h-16 flex items-center justify-between px-4 border-b border-slate-800/80">
             <div className="flex items-center gap-3 overflow-hidden">
-              <div className="size-10 rounded-xl bg-gradient-to-br from-indigo-500 to-blue-600 flex items-center justify-center text-white shadow-sm shadow-indigo-500/20 shrink-0">
-                <Layers className="size-5" aria-hidden="true" />
-              </div>
+              <img
+                src="/logo.png"
+                alt="T.C. Kütahya Belediyesi"
+                className="size-10 rounded-full object-contain shrink-0"
+              />
               {(!isCollapsed || mobileOpen) && (
                 <div className="flex flex-col min-w-0">
                   <span className="font-bold text-white text-sm truncate">
