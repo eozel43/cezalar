@@ -71,6 +71,9 @@ Deno.serve(async (req) => {
             return forbidden(403, 'Bu işlem için onaylı bir hesap gerekli');
         }
 
+        // Trim and collapse repeated whitespace
+        const cleanText = (value: any) => String(value).trim().replace(/\s+/g, ' ');
+
         // Validate and transform data
         const transformedData = varakalar.map((varaka: any) => {
             // Basic validation
@@ -82,9 +85,9 @@ Deno.serve(async (req) => {
                 sira_no: varaka.sira_no || null,
                 tarih: varaka.tarih,
                 gun: varaka.gun || '',
-                plaka_no: varaka.plaka_no,
-                isim: varaka.isim,
-                kabahat: varaka.kabahat,
+                plaka_no: cleanText(varaka.plaka_no),
+                isim: cleanText(varaka.isim),
+                kabahat: cleanText(varaka.kabahat),
                 ceza_miktari: parseFloat(varaka.ceza_miktari) || 0,
                 ay: parseInt(varaka.ay) || null,
                 mevsim: varaka.mevsim || null,
@@ -92,6 +95,81 @@ Deno.serve(async (req) => {
                 ceza_detay: varaka.ceza_detay || null
             };
         });
+
+        // Unify kabahat spellings that differ only in letter case
+        // (e.g. "müşteriye Kötü Söz" vs "Müşteriye Kötü Söz"): every variant is
+        // mapped to the most frequent spelling across the file and, when
+        // appending, the existing records
+        const kabahatKey = (value: string) => value.toLocaleLowerCase('tr-TR');
+        const variantCounts = new Map<string, Map<string, number>>();
+        const countVariant = (variant: string) => {
+            const key = kabahatKey(variant);
+            const variants = variantCounts.get(key) || new Map<string, number>();
+            variants.set(variant, (variants.get(variant) || 0) + 1);
+            variantCounts.set(key, variants);
+        };
+
+        transformedData.forEach((row) => countVariant(row.kabahat));
+
+        const existingVariants: string[] = [];
+        if (!clearExisting) {
+            const pageSize = 1000;
+            for (let from = 0; ; from += pageSize) {
+                const pageResponse = await fetch(`${supabaseUrl}/rest/v1/varakalar?select=kabahat&order=id`, {
+                    headers: {
+                        'Authorization': `Bearer ${serviceRoleKey}`,
+                        'apikey': serviceRoleKey,
+                        'Range': `${from}-${from + pageSize - 1}`
+                    }
+                });
+                if (!pageResponse.ok) {
+                    throw new Error('Mevcut kabahat türleri okunamadı');
+                }
+                const page = await pageResponse.json();
+                page.forEach((row: { kabahat: string }) => {
+                    countVariant(row.kabahat);
+                    existingVariants.push(row.kabahat);
+                });
+                if (page.length < pageSize) break;
+            }
+        }
+
+        const canonicalKabahat = new Map<string, string>();
+        variantCounts.forEach((variants, key) => {
+            const [best] = [...variants.entries()].sort((a, b) =>
+                b[1] - a[1] ||
+                Number(/^\p{Lu}/u.test(b[0])) - Number(/^\p{Lu}/u.test(a[0])) ||
+                a[0].localeCompare(b[0], 'tr')
+            );
+            canonicalKabahat.set(key, best[0]);
+        });
+
+        transformedData.forEach((row) => {
+            row.kabahat = canonicalKabahat.get(kabahatKey(row.kabahat)) || row.kabahat;
+        });
+
+        // Existing records with a non-canonical spelling are renamed too
+        for (const variant of new Set(existingVariants)) {
+            const canonical = canonicalKabahat.get(kabahatKey(variant));
+            if (canonical && canonical !== variant) {
+                const renameResponse = await fetch(
+                    `${supabaseUrl}/rest/v1/varakalar?kabahat=eq.${encodeURIComponent(variant)}`,
+                    {
+                        method: 'PATCH',
+                        headers: {
+                            'Authorization': `Bearer ${serviceRoleKey}`,
+                            'apikey': serviceRoleKey,
+                            'Content-Type': 'application/json',
+                            'Prefer': 'return=minimal'
+                        },
+                        body: JSON.stringify({ kabahat: canonical, updated_at: new Date().toISOString() })
+                    }
+                );
+                if (!renameResponse.ok) {
+                    console.error('Kabahat rename error:', await renameResponse.text());
+                }
+            }
+        }
 
         // Track deleted record count
         let deletedCount = 0;
